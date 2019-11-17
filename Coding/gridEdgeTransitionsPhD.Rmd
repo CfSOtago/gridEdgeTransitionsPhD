@@ -5,6 +5,38 @@ date: "18/11/2019"
 output: html_document
 ---
 
+
+```{r library}
+
+
+## Packages needed in this .Rmd file ----
+#rmdLibs <- c("data.table", # data munching
+#             "ggplot2", # for fancy graphs
+#             "lubridate", # date & time processing
+#             "readr", # writing to files
+#             "hms", # manipulate h:m:s
+#             "skimr", # for skim
+#             "knitr", # for kable
+#             "reshape2", # data manipulation
+#             "dplyr"
+#)
+## load them
+#loadLibraries(rmdLibs)
+#
+#load(rmdLibs)
+
+library(data.table) # data munching
+library(ggplot2) # for fancy graphs
+library(lubridate) # data & time processing
+library(readr) # writing to files
+library(hms) # manipulate h:m:s
+library(skimr) # for skim
+library(knitr) # for kable
+library(reshape2) # data manipulation
+library(dplyr) # data manipulation
+
+```
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
