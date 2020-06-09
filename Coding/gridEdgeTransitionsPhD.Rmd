@@ -43,6 +43,87 @@ loadLibraries(rmdLibs)
 
 ```
 
+```{r gcParams}
+
+library(here)
+
+# Package parameters ----
+
+gcParams <<- list() # params holder
+
+# > Location of the repo ----
+library(here)
+gcParams$repoLoc <- here::here()
+
+# Data ----
+# attempt to guess the platform & user
+gcParams$info <- Sys.info()
+gcParams$sysname <- gcParams$info[1]
+gcParams$nodename <- gcParams$info[4]
+gcParams$login <- gcParams$info[6]
+gcParams$user <- gcParams$info[7]
+
+# > Set data path ----
+if((gcParams$user == "dataknut" | gcParams$user == "carsten" ) & 
+   gcParams$sysname == "Linux"){ # cs rstudio server
+  gcParams$GreenGrid <- path.expand("~/greenGridData/")
+  gcParams$GreenGridData <- path.expand("~/greenGridData/cleanData/safe/")
+  gcParams$censusData <- path.expand("~/greenGridData/externalData/nzCensus/") # fix for your platform
+  gcParams$gxpData <- path.expand("~/greenGridData/externalData/EA_GXP_Data/") # fix for your platform
+}
+if(gcParams$user == "ben" & gcParams$sysname == "Darwin"){
+  gcParams$GreenGrid <- path.expand("~/Data/NZ_GREENGrid/")
+  gcParams$GreenGridData <- path.expand("~/Data/NZ_GREENGrid/safe/")
+  gcParams$censusData <- path.expand("~/Data/NZ_Census/") # fix for your platform
+  gcParams$gxpData <- path.expand("~/Data/NZ_EA_EMI/gxp/") # fix for your platform
+}
+if(gcParams$user == "carsten.dortans" & gcParams$sysname == "Darwin"){
+  # check this path is OK - HCS
+  gcParams$GreenGridData <- path.expand("/Volumes/hum-csafe/Personal Folders/Carsten Dortans/Solarcity/Dummy/")
+}
+
+message("We're ", gcParams$user, " using " , gcParams$sysname)
+message("Base data path : ", gcParams$GreenGrid)
+
+# > Misc data ----
+gcParams$bytesToMb <- 0.000001
 
 
+```
+
+```{r loaddummydata}
+
+Dummy1DT <- data.table::as.data.table(
+ readr::read_csv("/Volumes/hum-csafe/Research Projects/GREEN Grid/cleanData/safe/SCD1.csv.gz",
+                       col_types = cols(
+                       MeasurementDate = col_datetime(format = ""),
+                       TotalUsed = col_double(),
+                       SolarGenerated = col_double(),
+                       GridUsed = col_double(),
+                       SolarExported = col_double(),
+                       BatteryCharge1 = col_double(),
+                       BatteryDischarge = col_double(),
+                       Power1 = col_double(),
+                       Power2 = col_double(),
+                       Power3 = col_double(),
+                       Power4 = col_double(),
+                       BatteryCharge2 = col_double(),
+                       Voltage = col_double()
+                        # <- crucial otherwise readr infers integers for some reason
+                                       )
+                                             )
+                )
+
+
+
+library(readxl)
+Example_1_CT_Data <- read_excel("~/greenGridData/externalData/solarCity/2020-05-24-sampleData/Example 1 - CT Data.xlsx")
+View(Example_1_CT_Data)
+
+
+
+
+
+
+```
 
