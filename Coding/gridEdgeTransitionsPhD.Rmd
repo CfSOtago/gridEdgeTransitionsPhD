@@ -36,94 +36,155 @@ rmdLibs <- c("data.table", # data munching
              "knitr", # for kable
              "reshape2", # data manipulation
              "dplyr", # data manupilation
-             "here" # loading data
+             "here", # loading data
+             "kableExtra" # for tables
 )
 # load them
 loadLibraries(rmdLibs)
 
 ```
 
-```{r gcParams}
-
-library(here)
-
-# Package parameters ----
-
-gcParams <<- list() # params holder
-
-# > Location of the repo ----
-library(here)
-gcParams$repoLoc <- here::here()
-
-# Data ----
-# attempt to guess the platform & user
-gcParams$info <- Sys.info()
-gcParams$sysname <- gcParams$info[1]
-gcParams$nodename <- gcParams$info[4]
-gcParams$login <- gcParams$info[6]
-gcParams$user <- gcParams$info[7]
-
-# > Set data path ----
-if((gcParams$user == "dataknut" | gcParams$user == "carsten" ) & 
-   gcParams$sysname == "Linux"){ # cs rstudio server
-  gcParams$GreenGrid <- path.expand("~/greenGridData/")
-  gcParams$GreenGridData <- path.expand("~/greenGridData/cleanData/safe/")
-  gcParams$censusData <- path.expand("~/greenGridData/externalData/nzCensus/") # fix for your platform
-  gcParams$gxpData <- path.expand("~/greenGridData/externalData/EA_GXP_Data/") # fix for your platform
-}
-if(gcParams$user == "ben" & gcParams$sysname == "Darwin"){
-  gcParams$GreenGrid <- path.expand("~/Data/NZ_GREENGrid/")
-  gcParams$GreenGridData <- path.expand("~/Data/NZ_GREENGrid/safe/")
-  gcParams$censusData <- path.expand("~/Data/NZ_Census/") # fix for your platform
-  gcParams$gxpData <- path.expand("~/Data/NZ_EA_EMI/gxp/") # fix for your platform
-}
-if(gcParams$user == "carsten.dortans" & gcParams$sysname == "Darwin"){
-  # check this path is OK - HCS
-  gcParams$GreenGridData <- path.expand("/Volumes/hum-csafe/Personal Folders/Carsten Dortans/Solarcity/Dummy/")
-}
-
-message("We're ", gcParams$user, " using " , gcParams$sysname)
-message("Base data path : ", gcParams$GreenGrid)
-
-# > Misc data ----
-gcParams$bytesToMb <- 0.000001
-
-
-```
-
 ```{r loaddummydata}
 
-Dummy1DT <- data.table::as.data.table(
- readr::read_csv("/Volumes/hum-csafe/Research Projects/GREEN Grid/cleanData/safe/SCD1.csv.gz",
-                       col_types = cols(
-                       MeasurementDate = col_datetime(format = ""),
-                       TotalUsed = col_double(),
-                       SolarGenerated = col_double(),
-                       GridUsed = col_double(),
-                       SolarExported = col_double(),
-                       BatteryCharge1 = col_double(),
-                       BatteryDischarge = col_double(),
-                       Power1 = col_double(),
-                       Power2 = col_double(),
-                       Power3 = col_double(),
-                       Power4 = col_double(),
-                       BatteryCharge2 = col_double(),
-                       Voltage = col_double()
-                        # <- crucial otherwise readr infers integers for some reason
-                                       )
-                                             )
-                )
-
-
-
 library(readxl)
-Example_1_CT_Data <- read_excel("~/greenGridData/externalData/solarCity/2020-05-24-sampleData/Example 1 - CT Data.xlsx")
-View(Example_1_CT_Data)
+
+Dummy1DT <- data.table::as.data.table(read_excel("~/greenGridData/externalData/solarCity/2020-05-24-sampleData/Example 1 - CT Data.xlsx", sheet = "Main"))
+
+Dummy2DT <- data.table::as.data.table(read_excel("~/greenGridData/externalData/solarCity/2020-05-24-sampleData/Example 1 - CT Data.xlsx", sheet = "Inverter"))
+
+```
+
+
+```{r skimRable}
+#Describe using skim
+skimr::skim(Dummy1DT)
+skimr::skim(Dummy2DT)
+```
+
+```{r dummyadd}
+
+Dummy1DT[, rDateTimeOrig := MeasurementDate] # just in case
+Dummy1DT[, rDateTime := lubridate::as_datetime(MeasurementDate)]
+Dummy1DT[, rDateTimeNZT := lubridate::force_tz(MeasurementDate, 
+                                                    tzone = "Pacific/Auckland")]
+Dummy1DT[, rTime := hms::as_hms(rDateTimeNZT)]
+Dummy1DT[, rMonth := lubridate::month(rDateTimeNZT, label = TRUE, abbr = TRUE)]
+Dummy1DT[, rDate := lubridate::date(rDateTimeNZT)]
+#---------
+Dummy2DT[, rDateTimeOrig := RecordDateTime] # just in case
+Dummy2DT[, rDateTime := lubridate::as_datetime(RecordDateTime)]
+Dummy2DT[, rDateTimeNZT := lubridate::force_tz(RecordDateTime, 
+                                                    tzone = "Pacific/Auckland")]
+Dummy2DT[, rTime := hms::as_hms(rDateTimeNZT)]
+Dummy2DT[, rMonth := lubridate::month(rDateTimeNZT, label = TRUE, abbr = TRUE)]
+Dummy2DT[, rDate := lubridate::date(rDateTimeNZT)]
+
+
+# check
+print("Dummy data loaded")
+message("Loaded ", tidyNum(nrow(Dummy1DT)), " rows of data")
+table(Dummy1DT[is.na(rDateTime)]$Time_Period)
+nrow(Dummy1DT)
+summary(Dummy1DT$rDateTimeNZT)
+#---------
+print("Dummy data loaded")
+message("Loaded ", tidyNum(nrow(Dummy2DT)), " rows of data")
+table(Dummy1DT[is.na(rDateTime)]$Time_Period)
+nrow(Dummy2DT)
+summary(Dummy2DT$rDateTimeNZT)# Attention, do the nObs match up?
+
+
+# nObs per month
+
+t1 <- Dummy1DT[, .(nObsMain = .N), keyby = .(rMonth)]
+t2 <- Dummy2DT[, .(nObsInverter = .N), keyby = .(rMonth)]
+t1 <- t1[, nObsInverter:= t2$nObsInverter]
+kableExtra::kable(t1, caption = "N obs per date") %>%
+kable_styling() # Attention, do the nObs match up?
+```
+
+```{r dummycalc}
+
+#Converting kWh in power W for every 15 minutes
+Dummy1DT <- Dummy1DT[, powerW := (`Total Used`*4)*1000]
+Dummy1DT <- Dummy1DT[, `Solar Generated W`:= (`Solar Generated`*4)*1000]
+Dummy1DT <- Dummy1DT[, `Solar Exported W`:= (`Solar Exported`*4)*1000]
+Dummy1DT <- Dummy1DT[, `Solar Used W`:= (`Solar Used`*4)*1000]
+Dummy1DT <- Dummy1DT[, `Battery Discharge W`:= (`Battery Discharge`*4)*1000]
+Dummy1DT <- Dummy1DT[, `Battery Charge W`:= (`Battery Charge`*4)*1000]
+Dummy1DT <- Dummy1DT[, `Household demand W`:= powerW-`Battery Charge W`+`Battery Discharge W`]
+Dummy1DT <- Dummy1DT[, `Grid import W`:= (`Grid Used`*4)*1000]
+Dummy1DT <- Dummy1DT[, `Grid impact W`:= `Grid import W` - `Solar Exported W`]
+
+
+#This function adds a new column to a data.table and replaces missing values with NA
+#Use this function if you have two variables in different data.tables with unequal length
+add.col<-function(df, new.col) {n.row<-dim(df)[1]
+           length(new.col)<-n.row
+           cbind(df, new.col)
+                        }
+
+Dummy1DT<-add.col(Dummy1DT,Dummy2DT$`Battery 1 Capacity %`)
+names(Dummy1DT)[names(Dummy1DT) == 'new.col'] <- 'Battery Capacity %' #Renames the copied column
 
 
 
-#Test
+
+
+
+
+
+
+
+
 
 
 ```
 
+```{r dummyplot}
+# Grid impact
+plotDT <- Dummy1DT[rDate=="2019-11-04"]
+
+legend_title <- "Variables"
+myPlotTot <- ggplot2::ggplot(plotDT, aes(x= rTime)) +
+  geom_line(aes(y=`Grid impact W`, colour = "Grid impact W"))+
+  scale_color_manual(legend_title, values = c(`Grid impact W`='red'), 
+                     labels = c("Grid impact"),
+                     breaks= c("Grid impact W"))+
+  theme(axis.text.x = element_text(colour = "black"),
+        axis.text.y = element_text(colour ="black"))+
+  theme(legend.title=element_blank())+
+  labs(x='Time', y='Power (W)')+
+  theme(legend.position="bottom")
+myPlotTot
+
+
+#Battery Charging
+
+legend_title <- "Variables"
+myPlotTot <- ggplot2::ggplot(plotDT, aes(x= rTime)) +
+  geom_line(aes(y=`Battery Charge W`, colour = "Battery Charge W"))+
+  geom_line(aes(y=`Solar Generated W`, colour = "Solar Generated W"))+
+  geom_line(aes(y=`Solar Exported W`, colour = "Solar Exported W"))+
+  geom_line(aes(y=`Battery Discharge W`, colour = "Battery Discharge W"))+
+  geom_line(aes(y=`Actual demand W`, colour = "Household demand W"))+
+  geom_line(aes(y=`Grid import W`, colour = "Grid import W"))+
+  scale_color_manual(legend_title, values = c(`Battery Charge W`='red', `Solar Generated W`='orange', `Solar Exported W`='blue', `Battery Discharge W`='black', `Household demand W`='green', `Grid import W`='purple'), 
+                     labels = c("Battery Charge", "Solar generation", "Solar export", "Battery Discharge", "Household demand", "Grid import"),
+                     breaks= c("Battery Charge W", "Solar Generated W", "Solar Exported W", "Battery Discharge W", "Household demand W", "Grid import W"))+
+  theme(axis.text.x = element_text(colour = "black"),
+        axis.text.y = element_text(colour ="black"))+
+  theme(legend.title=element_blank())+
+  labs(x='Time', y='Power (W)')+
+  theme(legend.position="bottom")
+myPlotTot
+
+
+
+
+
+
+
+
+
+```
