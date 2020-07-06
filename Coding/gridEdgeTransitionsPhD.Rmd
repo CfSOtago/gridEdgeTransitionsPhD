@@ -17,75 +17,54 @@ startTime <- proc.time()
 sysInfo <- Sys.info()
 ```
 
-```{r librarySetup, warning=FALSE, message=FALSE, include=FALSE}
+```{r external packages}
 
-#Some functions use Ben's coding. To install these packages try and then load in the console:
-#devtools::install_github("CfSOtago/GREENGridData")
-#devtools::install_github("CfSOtago/GREENGridEECA") 
-
-library(GREENGridEECA)
-library(GREENGridData)
-
-#Packages needed in this .Rmd file ----
-rmdLibs <- c("data.table", # data munching
-             "ggplot2", # for fancy graphs
-             "lubridate", # date & time processing
-             "readr", # writing to files
-             "hms", # manipulate h:m:s
-             "skimr", # for skim
-             "knitr", # for kable
-             "reshape2", # data manipulation
-             "dplyr", # data manupilation
-             "here", # loading data
-             "kableExtra" # for tables
-)
-# load them
-loadLibraries(rmdLibs)
+remotes::install_github("dataknut/nzGREENGridDataR")
 
 ```
 
-```{r loaddummydata}
+```{r drake}
 
-library(readxl)
+# Run _drake.R first 
+source("/home/carsten/gridEdgeTransitionsPhD/Coding/_drake.R")
 
-Dummy1DT <- data.table::as.data.table(read_excel("~/greenGridData/externalData/solarCity/2020-05-24-sampleData/Example 1 - CT Data.xlsx", sheet = "Main"))
+# Run our plan
+make(plan1) # What is the difference to r_make() ?
 
-Dummy2DT <- data.table::as.data.table(read_excel("~/greenGridData/externalData/solarCity/2020-05-24-sampleData/Example 1 - CT Data.xlsx", sheet = "Inverter"))
+# Load information from the cache 
+loadd(Dummy11DT)
+loadd(Dummy12DT)
+
+#vis_drake_graph(plan1)
 
 ```
+
+
+
+
+
+
+
+
+
 
 
 ```{r skimRable}
 #Describe using skim
-skimr::skim(Dummy1DT)
-skimr::skim(Dummy2DT)
+skimr::skim(Dummy11DT)
+skimr::skim(Dummy12DT)
 ```
 
 ```{r dummyadd}
 
-Dummy1DT[, rDateTimeOrig := MeasurementDate] # just in case
-Dummy1DT[, rDateTime := lubridate::as_datetime(MeasurementDate)]
-Dummy1DT[, rDateTimeNZT := lubridate::force_tz(MeasurementDate, 
-                                                    tzone = "Pacific/Auckland")]
-Dummy1DT[, rTime := hms::as_hms(rDateTimeNZT)]
-Dummy1DT[, rMonth := lubridate::month(rDateTimeNZT, label = TRUE, abbr = TRUE)]
-Dummy1DT[, rDate := lubridate::date(rDateTimeNZT)]
-#---------
-Dummy2DT[, rDateTimeOrig := RecordDateTime] # just in case
-Dummy2DT[, rDateTime := lubridate::as_datetime(RecordDateTime)]
-Dummy2DT[, rDateTimeNZT := lubridate::force_tz(RecordDateTime, 
-                                                    tzone = "Pacific/Auckland")]
-Dummy2DT[, rTime := hms::as_hms(rDateTimeNZT)]
-Dummy2DT[, rMonth := lubridate::month(rDateTimeNZT, label = TRUE, abbr = TRUE)]
-Dummy2DT[, rDate := lubridate::date(rDateTimeNZT)]
 
 
 # check
 print("Dummy data loaded")
-message("Loaded ", tidyNum(nrow(Dummy1DT)), " rows of data")
-table(Dummy1DT[is.na(rDateTime)]$Time_Period)
-nrow(Dummy1DT)
-summary(Dummy1DT$rDateTimeNZT)
+message("Loaded ", tidyNum(nrow(Dummy11DT)), " rows of data")
+table(Dummy11DT[is.na(rDateTime)]$Time_Period)
+nrow(Dummy11DT)
+summary(Dummy11DT$rDateTimeNZT)
 #---------
 print("Dummy data loaded")
 message("Loaded ", tidyNum(nrow(Dummy2DT)), " rows of data")
@@ -105,31 +84,18 @@ kable_styling() # Attention, do the nObs match up?
 
 ```{r dummycalc}
 
-#Converting kWh in power W for every 15 minutes
-Dummy1DT <- Dummy1DT[, powerW := (`Total Used`*4)*1000]
-Dummy1DT <- Dummy1DT[, `Solar Generated W`:= (`Solar Generated`*4)*1000]
-Dummy1DT <- Dummy1DT[, `Solar Exported W`:= (`Solar Exported`*4)*1000]
-Dummy1DT <- Dummy1DT[, `Solar Used W`:= (`Solar Used`*4)*1000]
-Dummy1DT <- Dummy1DT[, `Battery Discharge W`:= (`Battery Discharge`*4)*1000]
-Dummy1DT <- Dummy1DT[, `Battery Charge W`:= (`Battery Charge`*4)*1000]
-Dummy1DT <- Dummy1DT[, `Household demand W`:= powerW-`Battery Charge W`+`Battery Discharge W`]
-Dummy1DT <- Dummy1DT[, `Grid import W`:= (`Grid Used`*4)*1000]
-Dummy1DT <- Dummy1DT[, `Grid impact W`:= `Grid import W` - `Solar Exported W`]
 
+
+loadd(Convert1DT)
 
 #This function adds a new column to a data.table and replaces missing values with NA
 #Use this function if you have two variables in different data.tables with unequal length
-add.col<-function(df, new.col) {n.row<-dim(df)[1]
-           length(new.col)<-n.row
-           cbind(df, new.col)
-                        }
-
-Dummy1DT<-add.col(Dummy1DT,Dummy2DT$`Battery 1 Capacity %`)
-names(Dummy1DT)[names(Dummy1DT) == 'new.col'] <- 'Battery Capacity %' #Renames the copied column
+Convert1DT<-add.col(Convert1DT,Dummy12DT$`Battery 1 Capacity %`)
+names(Convert1DT)[names(Convert1DT) == 'new.col'] <- 'Battery Capacity %' #Renames the copied column
 
 
-
-
+#git branch -D initialDummyDataOverviewSet1
+#git push <remote> :<branch>
 
 
 
@@ -157,7 +123,7 @@ myPlotTot <- ggplot2::ggplot(plotDT, aes(x= rTime)) +
   labs(x='Time', y='Power (W)')+
   theme(legend.position="bottom")
 myPlotTot
-
+ggsave(here::here("Documents/Plots/Dummy_Data/Grid_Impact.png"), dpi = 1000)
 
 #Battery Charging
 
@@ -167,7 +133,7 @@ myPlotTot <- ggplot2::ggplot(plotDT, aes(x= rTime)) +
   geom_line(aes(y=`Solar Generated W`, colour = "Solar Generated W"))+
   geom_line(aes(y=`Solar Exported W`, colour = "Solar Exported W"))+
   geom_line(aes(y=`Battery Discharge W`, colour = "Battery Discharge W"))+
-  geom_line(aes(y=`Actual demand W`, colour = "Household demand W"))+
+  geom_line(aes(y=`Household demand W`, colour = "Household demand W"))+
   geom_line(aes(y=`Grid import W`, colour = "Grid import W"))+
   scale_color_manual(legend_title, values = c(`Battery Charge W`='red', `Solar Generated W`='orange', `Solar Exported W`='blue', `Battery Discharge W`='black', `Household demand W`='green', `Grid import W`='purple'), 
                      labels = c("Battery Charge", "Solar generation", "Solar export", "Battery Discharge", "Household demand", "Grid import"),
@@ -179,7 +145,7 @@ myPlotTot <- ggplot2::ggplot(plotDT, aes(x= rTime)) +
   theme(legend.position="bottom")
 myPlotTot
 
-
+ggsave(here::here("Documents/Plots/Dummy_Data/Overview.png"), dpi = 1000)
 
 
 
