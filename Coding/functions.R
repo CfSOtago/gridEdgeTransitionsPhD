@@ -27,15 +27,18 @@ d11_time <- function(d11) {
 }
 
 # This function uses lubridate and hms to create new columns for the second worksheet of the first data set
-d12_time <- function(d12) {
-  Dummy12DT <- d12
-  Dummy12DT[, rDateTimeOrig := RecordDateTime] # just in case
-  Dummy12DT[, rDateTime := lubridate::as_datetime(RecordDateTime)]
-  Dummy12DT[, rDateTimeNZT := lubridate::force_tz(RecordDateTime, 
+# it assumes you pass in a data.table. You can pass in any one you want as long as it has `RecordDateTime`
+# usage: newDT <- d12_time(oldDT)
+d12_time <- function(dt) {
+  #Dummy12DT <- d12 not needed
+  dt[, rDateTimeOrig := RecordDateTime] # just in case
+  dt[, rDateTime := lubridate::as_datetime(RecordDateTime)]
+  dt[, rDateTimeNZT := lubridate::force_tz(RecordDateTime, 
                                                  tzone = "Pacific/Auckland")]
-  Dummy12DT[, rTime := hms::as_hms(rDateTimeNZT)]
-  Dummy12DT[, rMonth := lubridate::month(rDateTimeNZT, label = TRUE, abbr = TRUE)]
-  Dummy12DT[, rDate := lubridate::date(rDateTimeNZT)]
+  dt[, rTime := hms::as_hms(rDateTimeNZT)]
+  dt[, rMonth := lubridate::month(rDateTimeNZT, label = TRUE, abbr = TRUE)]
+  dt[, rDate := lubridate::date(rDateTimeNZT)]
+  return(dt)
 }
 
 ## POWER :: First data set
