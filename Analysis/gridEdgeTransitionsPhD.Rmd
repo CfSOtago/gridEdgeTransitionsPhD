@@ -35,6 +35,10 @@ make(plan1) # What is the difference to r_make() ?
 loadd(Dummy11DT)
 loadd(Dummy12DT)
 
+
+CD1DT = time_CD_1(CD1_raw)
+
+
 #vis_drake_graph(plan1)
 
 ```
