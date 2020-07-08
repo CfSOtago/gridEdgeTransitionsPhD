@@ -19,44 +19,33 @@ sysInfo <- Sys.info()
 
 ```{r external packages}
 
-remotes::install_github("dataknut/nzGREENGridDataR")
+#remotes::install_github("dataknut/nzGREENGridDataR")
 
 ```
 
 ```{r drake}
 
-# Run _drake.R first 
-source("/home/carsten/gridEdgeTransitionsPhD/Coding/_drake.R")
+# Run makeFile first
 
-# Run our plan
-make(plan1) # What is the difference to r_make() ?
-
-# Load information from the cache 
-loadd(Dummy11DT)
-loadd(Dummy12DT)
+r_make()
 
 
-CD1DT = time_CD_1(CD1_raw)
+readd(Plot.grid.impact.initial)
+#ggsave(here::here("Documents/Plots/Dummy_Data/Grid_Impact.png"), dpi = 1000)
+readd(Plot.battery.charge.initial)
+#ggsave(here::here("Documents/Plots/Dummy_Data/Overview.png"), dpi = 1000)
 
 
-#vis_drake_graph(plan1)
-
+#make(plan)
+#vis_drake_graph(plan)
+#sankey_drake_graph(plan)
+#drake_ggraph(plan)
 ```
-
-
-
-
-
-
-
-
-
-
 
 ```{r skimRable}
 #Describe using skim
-skimr::skim(Dummy11DT)
-skimr::skim(Dummy12DT)
+loadd(CD1data)
+skimr::skim(CD1data)
 ```
 
 ```{r dummyadd}
@@ -86,75 +75,5 @@ kableExtra::kable(t1, caption = "N obs per date") %>%
 kable_styling() # Attention, do the nObs match up?
 ```
 
-```{r dummycalc}
 
 
-
-loadd(Convert1DT)
-
-#This function adds a new column to a data.table and replaces missing values with NA
-#Use this function if you have two variables in different data.tables with unequal length
-Convert1DT<-add.col(Convert1DT,Dummy12DT$`Battery 1 Capacity %`)
-names(Convert1DT)[names(Convert1DT) == 'new.col'] <- 'Battery Capacity %' #Renames the copied column
-
-
-#git branch -D initialDummyDataOverviewSet1
-#git push <remote> :<branch>
-
-
-
-
-
-
-
-
-
-```
-
-```{r dummyplot}
-# Grid impact
-plotDT <- Dummy1DT[rDate=="2019-11-04"]
-
-legend_title <- "Variables"
-myPlotTot <- ggplot2::ggplot(plotDT, aes(x= rTime)) +
-  geom_line(aes(y=`Grid impact W`, colour = "Grid impact W"))+
-  scale_color_manual(legend_title, values = c(`Grid impact W`='red'), 
-                     labels = c("Grid impact"),
-                     breaks= c("Grid impact W"))+
-  theme(axis.text.x = element_text(colour = "black"),
-        axis.text.y = element_text(colour ="black"))+
-  theme(legend.title=element_blank())+
-  labs(x='Time', y='Power (W)')+
-  theme(legend.position="bottom")
-myPlotTot
-ggsave(here::here("Documents/Plots/Dummy_Data/Grid_Impact.png"), dpi = 1000)
-
-#Battery Charging
-
-legend_title <- "Variables"
-myPlotTot <- ggplot2::ggplot(plotDT, aes(x= rTime)) +
-  geom_line(aes(y=`Battery Charge W`, colour = "Battery Charge W"))+
-  geom_line(aes(y=`Solar Generated W`, colour = "Solar Generated W"))+
-  geom_line(aes(y=`Solar Exported W`, colour = "Solar Exported W"))+
-  geom_line(aes(y=`Battery Discharge W`, colour = "Battery Discharge W"))+
-  geom_line(aes(y=`Household demand W`, colour = "Household demand W"))+
-  geom_line(aes(y=`Grid import W`, colour = "Grid import W"))+
-  scale_color_manual(legend_title, values = c(`Battery Charge W`='red', `Solar Generated W`='orange', `Solar Exported W`='blue', `Battery Discharge W`='black', `Household demand W`='green', `Grid import W`='purple'), 
-                     labels = c("Battery Charge", "Solar generation", "Solar export", "Battery Discharge", "Household demand", "Grid import"),
-                     breaks= c("Battery Charge W", "Solar Generated W", "Solar Exported W", "Battery Discharge W", "Household demand W", "Grid import W"))+
-  theme(axis.text.x = element_text(colour = "black"),
-        axis.text.y = element_text(colour ="black"))+
-  theme(legend.title=element_blank())+
-  labs(x='Time', y='Power (W)')+
-  theme(legend.position="bottom")
-myPlotTot
-
-ggsave(here::here("Documents/Plots/Dummy_Data/Overview.png"), dpi = 1000)
-
-
-
-
-
-
-
-```
