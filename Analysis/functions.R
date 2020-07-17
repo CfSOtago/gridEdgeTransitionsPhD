@@ -11,6 +11,14 @@ makeReport <- function(f){
   )
 }
 
+## Import data
+#This function imports LD data and combines the worksheets
+import.ld.data <- function(dt){
+ dt <- excel_sheets("~/greenGridData/externalData/solarCity/2020-05-24-sampleData/Example 2 - LD Data.xlsx") %>%
+ map_df(~read_xlsx("~/greenGridData/externalData/solarCity/2020-05-24-sampleData/Example 2 - LD Data.xlsx",.))
+  return(dt)
+}
+
 ## Time
 # These two functions apply lubridate  to create new columns for the CD data set 1st and 2nd worksheet
 # it assumes you pass in a data.table. You can pass in any one you want as long as it has `RecordDateTime`
@@ -38,6 +46,20 @@ time_CD_2 <- function(dt) {
   return(dt)
 }
 
+# Apply the same logic on LD data set
+time_LD <- function(dt) {
+  dt[, rDateTimeOrig := `Date`] # just in case
+  dt[, rDateTime := lubridate::as_datetime(`rDateTimeOrig`)]
+  dt[, rDateTimeNZT := lubridate::force_tz(`rDateTimeOrig`, 
+                                           tzone = "Pacific/Auckland")]
+  dt[, rTime := hms::as_hms(rDateTimeNZT)]
+  dt[, rMonth := lubridate::month(rDateTimeNZT, label = TRUE, abbr = TRUE)]
+  dt[, rDate := lubridate::date(rDateTimeNZT)]
+  return(dt)
+}
+
+
+
 #This function creates a new DT with specific columns from elsewhere, setkey, merging 
 #Use this function if you have two variables in different data.tables with unequal length
 select.columns <- function(dt, x, y){
@@ -64,7 +86,24 @@ convert_to_power <- function(dt) {
   dt[, `Grid impact W`:= `Grid import W` - `Solar Exported W`]
 }
 
+# Convert second data set to power and rename columns, perform claculations
+convert_to_power.ld <- function(dt){
+  
+ # dt[, `Grid import W`:= ((`TAPGr(kWh)` - shift(`TAPGr(kWh)`)*60)*1000), keyby = .(rDate)]
+  dt[, `Solar Generated W`:= ((`TPvA(kWh)` - shift(`TPvA(kWh)`))*60*1000), keyby = .(rDate)]
+  dt[, `Solar Generated W`:= ifelse(`Solar Generated W`<0,0,`Solar Generated W`)]#No negatives
+  
+  dt[, `Battery Discharge W`:= ((`TADCh(kWh)` - shift(`TADCh(kWh)`))*60*1000), keyby = .(rDate)]
+  dt[, `Battery Charge W`:= ((`TACh(kWh)` - shift(`TACh(kWh)`))*60*1000), keyby = .(rDate)]
 
+  dt[, `Grid import W`:= ((`TAPGr(kWh)` - shift(`TAPGr(kWh)`))*60*1000), keyby = .(rDate)]
+  dt[, `Grid impact W`:= (((`TAPGr(kWh)` - shift(`TAPGr(kWh)`))*60*1000)
+                        - (`TAP2Gr(KWh)` - shift(`TAP2Gr(KWh)`))*60*1000)
+                          , keyby = .(rDate)]# Import-export
+  
+  dt[, `Household demand W`:= (`Solar Generated W`+`Grid import W`+`Battery Discharge W`-`Battery Charge W`)]
+
+}
 
 # Plots ----
 

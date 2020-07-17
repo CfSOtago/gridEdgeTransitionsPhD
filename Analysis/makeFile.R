@@ -26,8 +26,10 @@ reqLibs <- c("data.table", # data munching
              "visNetwork", # for drake's dependency graph
              "callr", # for drake commands
              "readxl",
+             "purrr", # for imprting files
              "networkD3", # for more graphic elements
-             "ggraph" # for more graphic elements
+             "ggraph",
+             "purrr" # for importing files
 )
 # load them
 woRkflow::loadLibraries(reqLibs)

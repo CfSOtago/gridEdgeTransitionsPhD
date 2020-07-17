@@ -29,11 +29,80 @@ sysInfo <- Sys.info()
 
 r_make()
 
+loadd(LDpower)
+
+p <- ggplot2::ggplot(LDpower[rDate == as.Date("2019-12-15")], aes(x= rTime)) +
+   geom_line(aes(y=`Solar Generated W`, colour = "Solar Generated W"))+
+   geom_line(aes(y=`Grid import W`, colour = "Grid import W"))+
+   geom_line(aes(y=`Battery Discharge W`, colour = "Battery Discharge W"))+
+   geom_line(aes(y=`Battery Charge W`, colour = "Battery Charge W"))+
+   geom_line(aes(y=`Household demand W`, colour= "Household demand W"))+
+   scale_color_manual(values = c(`Solar Generated W`='orange', `Grid import W`='purple', `Battery Discharge W`='green', `Battery Charge W`='red', `Household demand W`='black'), 
+                       labels = c("Solar generation", "Grid import", "Battery Discharge", "Battery Charge", "Household demand"),
+                       breaks= c("Solar Generated W", "Grid import W", "Battery Discharge W", "Battery Charge W", "Household demand W"))+
+   theme(axis.text.x = element_text(colour = "black"),
+          axis.text.y = element_text(colour ="black"))+
+   theme(legend.title=element_blank())+
+   labs(x='Time', y='Power (W)')+
+   theme(legend.position="bottom")+
+   scale_x_time(breaks = c(hms::as_hms("00:00:00"), 
+                          hms::as_hms("04:00:00"), 
+                          hms::as_hms("08:00:00"),       
+                          hms::as_hms("12:00:00"), 
+                          hms::as_hms("16:00:00"), 
+                          hms::as_hms("20:00:00"),
+                          hms::as_hms("24:00:00"))) 
+
+
+p
+
+
+p <- ggplot2::ggplot(LDpower[rDate == as.Date("2019-12-15")], aes(x= rTime)) +
+   geom_line(aes(y=`Solar Generated W`, colour = "Solar Generated W"))+
+   geom_line(aes(y=`Grid impact W`, colour= "Grid impact W"))+
+   scale_color_manual(values = c(`Solar Generated W`='orange',  `Grid impact W`='black'), 
+                       labels = c("Solar generation",  "Grid impact"),
+                       breaks= c("Solar Generated W",  "Grid impact W"))+
+   theme(axis.text.x = element_text(colour = "black"),
+          axis.text.y = element_text(colour ="black"))+
+   theme(legend.title=element_blank())+
+   labs(x='Time', y='Power (W)')+
+   theme(legend.position="bottom")+
+   scale_x_time(breaks = c(hms::as_hms("00:00:00"), 
+                          hms::as_hms("04:00:00"), 
+                          hms::as_hms("08:00:00"),       
+                          hms::as_hms("12:00:00"), 
+                          hms::as_hms("16:00:00"), 
+                          hms::as_hms("20:00:00"),
+                          hms::as_hms("24:00:00"))) 
+
+
+p
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 readd(Plot.grid.impact.initial)
 #ggsave(here::here("Documents/Plots/Dummy_Data/Grid_Impact.png"), dpi = 1000)
 readd(Plot.battery.charge.initial)
 #ggsave(here::here("Documents/Plots/Dummy_Data/Overview.png"), dpi = 1000)
+
+
+
 
 
 #make(plan)
@@ -46,10 +115,20 @@ readd(Plot.battery.charge.initial)
 #Describe using skim
 loadd(CD1data)
 skimr::skim(CD1data)
+
+skimr::skim(LD_DT)
 ```
 
 ```{r dummyadd}
 
+# Test import
+
+loadd(raw_ld)
+
+raw_ld_df <- excel_sheets("~/greenGridData/externalData/solarCity/2020-05-24-sampleData/Example 2 - LD Data.xlsx") %>%
+  map_df(~read_xlsx("~/greenGridData/externalData/solarCity/2020-05-24-sampleData/Example 2 - LD Data.xlsx",.))
+
+raw_ld <- data.table::as.data.table(raw_ld_df)
 
 
 # check

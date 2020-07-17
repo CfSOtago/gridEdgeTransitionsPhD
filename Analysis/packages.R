@@ -17,3 +17,4 @@ library(readxl)#for reading excel files
 library(remotes) # for GreenGrid functions
 library(networkD3) # for more graphic elements
 library(ggraph) # more graphics
+library(purrr) # for importing files
