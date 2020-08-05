@@ -75,7 +75,7 @@ select.columns <- function(dt, x, y){
 
 # Convert first data set to power and rename columns, perform calculations
 convert_to_power <- function(dt) {
-  dt[, powerW := (`Total Used`*4)*1000]
+  dt[, powerW := (`Total Used`*4)*1000]#We have to assume that battery export is 0
   dt[, `Solar Generated W`:= (`Solar Generated`*4)*1000]
   dt[, `Solar Exported W`:= (`Solar Exported`*4)*1000]
   dt[, `Solar Used W`:= (`Solar Used`*4)*1000]
@@ -89,14 +89,16 @@ convert_to_power <- function(dt) {
 # Convert second data set to power and rename columns, perform claculations
 convert_to_power.ld <- function(dt){
   
+  dt[, tdiff := difftime(rDateTimeNZT, shift(rDateTimeNZT, 1), units("mins"))]#Difference in time
+  dt[, tdiff := as.numeric(tdiff)]
  # dt[, `Grid import W`:= ((`TAPGr(kWh)` - shift(`TAPGr(kWh)`)*60)*1000), keyby = .(rDate)]
-  dt[, `Solar Generated W`:= ((`TPvA(kWh)` - shift(`TPvA(kWh)`))*60*1000), keyby = .(rDate)]
-  dt[, `Solar Generated W`:= ifelse(`Solar Generated W`<0,0,`Solar Generated W`)]#No negatives
+  dt[, `Solar Generated W`:= (((`TPvA(kWh)`*(60/tdiff)) - shift((`TPvA(kWh)`*(60/tdiff))))*1000), keyby = .(rDate)]
+  #dt[, `Solar Generated W`:= ifelse(`Solar Generated W`<0,0,`Solar Generated W`)]#No negatives
   
   dt[, `Battery Discharge W`:= ((`TADCh(kWh)` - shift(`TADCh(kWh)`))*60*1000), keyby = .(rDate)]
   dt[, `Battery Charge W`:= ((`TACh(kWh)` - shift(`TACh(kWh)`))*60*1000), keyby = .(rDate)]
 
-  dt[, `Grid import W`:= ((`TAPGr(kWh)` - shift(`TAPGr(kWh)`))*60*1000), keyby = .(rDate)]
+  dt[, `Grid import W`:= (((`TAPGr(kWh)`*(60/tdiff)) - shift((`TAPGr(kWh)`*(60/tdiff))))*1000), keyby = .(rDate)]
   dt[, `Grid impact W`:= (((`TAPGr(kWh)` - shift(`TAPGr(kWh)`))*60*1000)
                         - (`TAP2Gr(KWh)` - shift(`TAP2Gr(KWh)`))*60*1000)
                           , keyby = .(rDate)]# Import-export

@@ -29,7 +29,8 @@ reqLibs <- c("data.table", # data munching
              "purrr", # for imprting files
              "networkD3", # for more graphic elements
              "ggraph",
-             "purrr" # for importing files
+             "purrr", # for importing files
+             "zoo"
 )
 # load them
 woRkflow::loadLibraries(reqLibs)

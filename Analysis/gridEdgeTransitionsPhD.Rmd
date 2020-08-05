@@ -102,13 +102,227 @@ readd(Plot.battery.charge.initial)
 #ggsave(here::here("Documents/Plots/Dummy_Data/Overview.png"), dpi = 1000)
 
 
-
+#skim(LDpower)
 
 
 #make(plan)
 #vis_drake_graph(plan)
 #sankey_drake_graph(plan)
 #drake_ggraph(plan)
+```
+
+```{r data overview}
+
+
+p <- ggplot2::ggplot(LDpower) +
+   geom_histogram(aes(x=  `Solar Generated W`/1000), binwidth = 0.1)+
+   theme(axis.text.x = element_text(colour = "black"),
+          axis.text.y = element_text(colour ="black"))+
+   theme(legend.title=element_blank())+
+  # scale_y_continuous( limits = c(-100,3200))+
+   theme(legend.position="bottom")+
+   ylim(c(0,2500)) + 
+   xlim(c(-20,14))
+   #scale_y_continuous(labels = scales::comma)
+  
+
+
+p
+
+#Boxplot
+
+p <- ggplot2::ggplot(LDpower) +
+  # geom_boxplot(aes(x=  `Solar Generated W`/1000), binwidth = 0.1, outlier.colour = "red", outlier.alpha = 0.1)+
+   geom_boxplot(aes(y=  `Solar Generated W`/1000), binwidth = 0.1, outlier.colour = "red", outlier.alpha = 0.1)+
+   theme(axis.text.x = element_text(colour = "black"),
+          axis.text.y = element_text(colour ="black"))+
+   theme(legend.title=element_blank())+
+  # scale_y_continuous( limits = c(-100,3200))+
+   theme(legend.position="bottom")+
+   #xlim(c(18,52)) + 
+   ylim(c(-5,20))
+   #scale_y_continuous(labels = scales::comma)
+  
+
+
+p
+
+
+max(LDpower$`Solar Generated W`, na.rm = TRUE)
+min(LDpower$`Solar Generated W`, na.rm = TRUE)
+sum(LDpower$`Solar Generated W`<0, na.rm=TRUE)
+sum(LDpower$`Solar Generated W`==0, na.rm=TRUE)
+sum(LDpower$`Solar Generated W`>0, na.rm=TRUE)
+sum(LDpower$`Solar Generated W`>5000, na.rm=TRUE)
+
+
+```
+```{r battery charge}
+
+p <- ggplot2::ggplot(LDpower) +
+   geom_density(aes(x=  `Battery Charge W`/1000), binwidth = 0.1)+
+   theme(axis.text.x = element_text(colour = "black"),
+          axis.text.y = element_text(colour ="black"))+
+   theme(legend.title=element_blank())+
+  # scale_y_continuous( limits = c(-100,3200))+
+   theme(legend.position="bottom")+
+   #ylim(c(0,200)) + 
+   xlim(c(0,25))
+   #scale_y_continuous(labels = scales::comma)
+  
+
+
+p
+
+
+
+p <- ggplot2::ggplot(LDpower) +
+  # geom_boxplot(aes(x=  `Solar Generated W`/1000), binwidth = 0.1, outlier.colour = "red", outlier.alpha = 0.1)+
+   geom_boxplot(aes(y=  `Battery Charge W`/1000), binwidth = 0.1, outlier.colour = "red", outlier.alpha = 0.1)+
+   theme(axis.text.x = element_text(colour = "black"),
+          axis.text.y = element_text(colour ="black"))+
+   theme(legend.title=element_blank())+
+  # scale_y_continuous( limits = c(-100,3200))+
+   theme(legend.position="bottom")+
+   #xlim(c(18,52)) + 
+    ylim(c(-5,150))
+   #scale_y_continuous(labels = scales::comma)
+  
+
+
+p
+
+TestDT <-LDpower
+TestDT <- TestDT[`Battery Charge W`>10000]
+
+
+max(LDpower$`Battery Charge W`, na.rm=TRUE)
+min(LDpower$`Battery Charge W`, na.rm=TRUE)
+sum(LDpower$`Battery Charge W`<0, na.rm=TRUE)
+sum(LDpower$`Battery Charge W`==0, na.rm=TRUE)
+sum(LDpower$`Battery Charge W`>0, na.rm=TRUE)
+sum(LDpower$`Battery Charge W`>10000, na.rm=TRUE)
+
+
+
+
+
+```
+
+```{r solar test}
+
+p <- ggplot2::ggplot(TestDT[rDate == as.Date("2019-12-28")], aes(x= rTime)) +
+  geom_line(aes(y=`kW`))
+  
+  p
+
+r_make()
+
+
+
+loadd(LDpower)
+
+TestDT <- LDpower
+
+library(zoo)
+is.na(TestDT$`TPvA(kWh)`) <- TestDT$`TPvA(kWh)` == 0
+TestDT$`TPvA(kWh)`        <- na.locf(TestDT$`TPvA(kWh)`,na.rm=FALSE)
+
+TestDT <- TestDT[, SolarkW:= `TPvA(kWh)` - shift(`TPvA(kWh)`), keyby =.(rDate)]
+
+TestDT <- TestDT[, kW := (SolarkW/tdiff)*60 ]
+
+test <- TestDT[kW > 10]
+
+test <- TestDT[rDate=="2019-10-18"]
+
+
+
+TestDT <- TestDT[, SolarkW:= (`TPvA(kWh)`*(60/tdiff)) - (shift(`TPvA(kWh)`*(60/tdiff))), keyby =.(rDate)]
+
+
+TestDT <- TestDT[, `Solar Test`:= (((`TPvA(kWh)`*(60/tdiff)) - shift((`TPvA(kWh)`*(60/tdiff))))*1000), keyby = .(rDate)]
+
+
+
+
+```
+```{r battery discharge}
+
+p <- ggplot2::ggplot(LDpower) +
+   geom_density(aes(x=  `Battery Discharge W`/1000), binwidth = 0.1)+
+   theme(axis.text.x = element_text(colour = "black"),
+          axis.text.y = element_text(colour ="black"))+
+   theme(legend.title=element_blank())+
+  # scale_y_continuous( limits = c(-100,3200))+
+   theme(legend.position="bottom")+
+ #  ylim(c(0,100)) + 
+  xlim(c(0,20))
+   #scale_y_continuous(labels = scales::comma)
+
+p
+
+
+
+p <- ggplot2::ggplot(LDpower) +
+  # geom_boxplot(aes(x=  `Solar Generated W`/1000), binwidth = 0.1, outlier.colour = "red", outlier.alpha = 0.1)+
+   geom_boxplot(aes(y=  `Battery Discharge W`/1000), binwidth = 0.1, outlier.colour = "red", outlier.alpha = 0.1)+
+   theme(axis.text.x = element_text(colour = "black"),
+          axis.text.y = element_text(colour ="black"))+
+   theme(legend.title=element_blank())+
+  # scale_y_continuous( limits = c(-100,3200))+
+   theme(legend.position="bottom")+
+   #xlim(c(18,52)) + 
+    ylim(c(-5,60))
+   #scale_y_continuous(labels = scales::comma)
+  
+
+
+p
+
+TestDT <-LDpower
+TestDT <- TestDT[`Battery Discharge W`>10000]
+
+max(LDpower$`Battery Discharge W`, na.rm=TRUE)
+min(LDpower$`Battery Discharge W`, na.rm=TRUE)
+sum(LDpower$`Battery Discharge W`<0, na.rm=TRUE)
+sum(LDpower$`Battery Discharge W`==0, na.rm=TRUE)
+sum(LDpower$`Battery Discharge W`>0, na.rm=TRUE)
+sum(LDpower$`Battery Discharge W`>10000, na.rm=TRUE)
+
+
+
+
+
+```
+```{r further analysis}
+
+TestDT <- LDpower
+
+## Make a data frame with a full series of dates from the min date to the max date
+## in the incomplete data frame
+full_dates <- seq(min(TestDT$rDateTimeNZT), max(TestDT$rDateTimeNZT), 
+                  by = "1 min")
+full_dates <- data.frame(date = full_dates)
+
+## Merge the complete data frame with the incomplete to fill in the dates and add 
+## NAs for missing values
+my_complete_data <- merge(full_dates, TestDT, by = full_dates$date, 
+                          all.x = TRUE)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ```
 
 ```{r skimRable}
@@ -123,12 +337,12 @@ skimr::skim(LD_DT)
 
 # Test import
 
-loadd(raw_ld)
+#loadd(raw_ld)
 
-raw_ld_df <- excel_sheets("~/greenGridData/externalData/solarCity/2020-05-24-sampleData/Example 2 - LD Data.xlsx") %>%
-  map_df(~read_xlsx("~/greenGridData/externalData/solarCity/2020-05-24-sampleData/Example 2 - LD Data.xlsx",.))
+#raw_ld_df <- excel_sheets("~/greenGridData/externalData/solarCity/2020-05-24-sampleData/Example 2 - LD Data.xlsx") %>%
+ # map_df(~read_xlsx("~/greenGridData/externalData/solarCity/2020-05-24-sampleData/Example 2 - LD Data.xlsx",.))
 
-raw_ld <- data.table::as.data.table(raw_ld_df)
+#raw_ld <- data.table::as.data.table(raw_ld_df)
 
 
 # check
@@ -154,5 +368,15 @@ kableExtra::kable(t1, caption = "N obs per date") %>%
 kable_styling() # Attention, do the nObs match up?
 ```
 
+```{r timetest}
 
+
+TestDT <- LDpower
+
+TestDT <- TestDT[, tdiff := difftime(rDateTimeNZT, shift(rDateTimeNZT, 1), units("mins"))]
+
+r_make()
+
+loadd(LDpower)
+```
 
