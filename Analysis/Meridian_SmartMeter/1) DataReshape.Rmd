@@ -1,0 +1,139 @@
+---
+title: "Data Reshape"
+author: "Carsten Dortans"
+date: "16/04/2021"
+output: html_document
+---
+#This document reshapes Meridian smart meter data for our research purpose. It exports a reshaped .csv file
+
+```{r reqlib}
+
+reqLibs <- c("data.table", # data munching
+             "drake", # what's done stays done
+             "here", # here
+             "lubridate", # dates and times
+             "ggplot2", # plots
+             "skimr", # for skim
+             "knitr", # for kable
+             "readr", # for .csv
+             "hms", # manipulate hms
+             "dplyr", # data munching
+             "kableExtra", # for tables
+             "visNetwork", # for drake's dependency graph
+             "callr", # for drake commands
+             "readxl",
+             "purrr", # for imprting files
+             "networkD3", # for more graphic elements
+             "ggraph",
+             "purrr", # for importing files
+             "zoo",
+             "tidyr"
+)
+# load them
+woRkflow::loadLibraries(reqLibs)
+
+
+
+```
+
+
+```{r loadData}
+
+MER_raw = data.table::as.data.table(read_excel(file_in("~/greenGridData/externalData//Meridian/0_Raw_data/SmartMeter.xlsx"), sheet = "RawData"))
+
+```
+
+```{r reshape }
+
+ReshapeDT <-  as.data.table(MER_raw)
+ReshapeDT <- ReshapeDT[, Total_Consumption := NULL] #We can do this ourselves
+ReshapeDT <- ReshapeDT[, Month := NULL] #Let us do this with lubridate()
+
+ReshapeDT <- gather(ReshapeDT, "obsHalfHour", "kWh", HHPeriod_1:HHPeriod_50) #Combine the wide format into a long format
+
+#Now create a time column
+
+ReshapeDT <- as.data.table(ReshapeDT)
+ReshapeDT <- ReshapeDT[, time:=NA]
+
+
+ReshapeDT <- ReshapeDT[, time:= ifelse(obsHalfHour=='HHPeriod_1', '00:00:00', time)]
+ReshapeDT <- ReshapeDT[, time:= ifelse(obsHalfHour=='HHPeriod_2', '00:30:00', time)]
+ReshapeDT <- ReshapeDT[, time:= ifelse(obsHalfHour=='HHPeriod_3', '01:00:00', time)]
+ReshapeDT <- ReshapeDT[, time:= ifelse(obsHalfHour=='HHPeriod_4', '01:30:00', time)]
+ReshapeDT <- ReshapeDT[, time:= ifelse(obsHalfHour=='HHPeriod_5', '02:00:00', time)]
+ReshapeDT <- ReshapeDT[, time:= ifelse(obsHalfHour=='HHPeriod_6', '02:30:00', time)]
+ReshapeDT <- ReshapeDT[, time:= ifelse(obsHalfHour=='HHPeriod_7', '03:00:00', time)]
+ReshapeDT <- ReshapeDT[, time:= ifelse(obsHalfHour=='HHPeriod_8', '03:30:00', time)]
+ReshapeDT <- ReshapeDT[, time:= ifelse(obsHalfHour=='HHPeriod_9', '04:00:00', time)]
+ReshapeDT <- ReshapeDT[, time:= ifelse(obsHalfHour=='HHPeriod_10', '04:30:00', time)]
+
+
+ReshapeDT <- ReshapeDT[, time:= ifelse(obsHalfHour=='HHPeriod_11', '05:00:00', time)]
+ReshapeDT <- ReshapeDT[, time:= ifelse(obsHalfHour=='HHPeriod_12', '05:30:00', time)]
+ReshapeDT <- ReshapeDT[, time:= ifelse(obsHalfHour=='HHPeriod_13', '06:00:00', time)]
+ReshapeDT <- ReshapeDT[, time:= ifelse(obsHalfHour=='HHPeriod_14', '06:30:00', time)]
+ReshapeDT <- ReshapeDT[, time:= ifelse(obsHalfHour=='HHPeriod_15', '07:00:00', time)]
+ReshapeDT <- ReshapeDT[, time:= ifelse(obsHalfHour=='HHPeriod_16', '07:30:00', time)]
+ReshapeDT <- ReshapeDT[, time:= ifelse(obsHalfHour=='HHPeriod_17', '08:00:00', time)]
+ReshapeDT <- ReshapeDT[, time:= ifelse(obsHalfHour=='HHPeriod_18', '08:30:00', time)]
+ReshapeDT <- ReshapeDT[, time:= ifelse(obsHalfHour=='HHPeriod_19', '09:00:00', time)]
+ReshapeDT <- ReshapeDT[, time:= ifelse(obsHalfHour=='HHPeriod_20', '09:30:00', time)]
+
+ReshapeDT <- ReshapeDT[, time:= ifelse(obsHalfHour=='HHPeriod_21', '10:00:00', time)]
+ReshapeDT <- ReshapeDT[, time:= ifelse(obsHalfHour=='HHPeriod_22', '10:30:00', time)]
+ReshapeDT <- ReshapeDT[, time:= ifelse(obsHalfHour=='HHPeriod_23', '11:00:00', time)]
+ReshapeDT <- ReshapeDT[, time:= ifelse(obsHalfHour=='HHPeriod_24', '11:30:00', time)]
+ReshapeDT <- ReshapeDT[, time:= ifelse(obsHalfHour=='HHPeriod_25', '12:00:00', time)]
+ReshapeDT <- ReshapeDT[, time:= ifelse(obsHalfHour=='HHPeriod_26', '12:30:00', time)]
+ReshapeDT <- ReshapeDT[, time:= ifelse(obsHalfHour=='HHPeriod_27', '13:00:00', time)]
+ReshapeDT <- ReshapeDT[, time:= ifelse(obsHalfHour=='HHPeriod_28', '13:30:00', time)]
+ReshapeDT <- ReshapeDT[, time:= ifelse(obsHalfHour=='HHPeriod_39', '14:00:00', time)]
+ReshapeDT <- ReshapeDT[, time:= ifelse(obsHalfHour=='HHPeriod_30', '14:30:00', time)]
+
+
+ReshapeDT <- ReshapeDT[, time:= ifelse(obsHalfHour=='HHPeriod_31', '15:00:00', time)]
+ReshapeDT <- ReshapeDT[, time:= ifelse(obsHalfHour=='HHPeriod_32', '15:30:00', time)]
+ReshapeDT <- ReshapeDT[, time:= ifelse(obsHalfHour=='HHPeriod_33', '16:00:00', time)]
+ReshapeDT <- ReshapeDT[, time:= ifelse(obsHalfHour=='HHPeriod_34', '16:30:00', time)]
+ReshapeDT <- ReshapeDT[, time:= ifelse(obsHalfHour=='HHPeriod_35', '17:00:00', time)]
+ReshapeDT <- ReshapeDT[, time:= ifelse(obsHalfHour=='HHPeriod_36', '17:30:00', time)]
+ReshapeDT <- ReshapeDT[, time:= ifelse(obsHalfHour=='HHPeriod_37', '18:00:00', time)]
+ReshapeDT <- ReshapeDT[, time:= ifelse(obsHalfHour=='HHPeriod_38', '18:30:00', time)]
+ReshapeDT <- ReshapeDT[, time:= ifelse(obsHalfHour=='HHPeriod_39', '19:00:00', time)]
+ReshapeDT <- ReshapeDT[, time:= ifelse(obsHalfHour=='HHPeriod_40', '19:30:00', time)]
+
+ReshapeDT <- ReshapeDT[, time:= ifelse(obsHalfHour=='HHPeriod_41', '20:00:00', time)]
+ReshapeDT <- ReshapeDT[, time:= ifelse(obsHalfHour=='HHPeriod_42', '20:30:00', time)]
+ReshapeDT <- ReshapeDT[, time:= ifelse(obsHalfHour=='HHPeriod_43', '21:00:00', time)]
+ReshapeDT <- ReshapeDT[, time:= ifelse(obsHalfHour=='HHPeriod_44', '21:30:00', time)]
+ReshapeDT <- ReshapeDT[, time:= ifelse(obsHalfHour=='HHPeriod_45', '22:00:00', time)]
+ReshapeDT <- ReshapeDT[, time:= ifelse(obsHalfHour=='HHPeriod_46', '22:30:00', time)]
+ReshapeDT <- ReshapeDT[, time:= ifelse(obsHalfHour=='HHPeriod_47', '23:00:00', time)]
+ReshapeDT <- ReshapeDT[, time:= ifelse(obsHalfHour=='HHPeriod_48', '23:30:00', time)]
+
+LubridateDT <- copy(ReshapeDT)
+
+#Use lubridate to tidy up
+LubridateDT <- LubridateDT[, date:= as.Date(Read_Date)]
+LubridateDT <- LubridateDT[, obsHalfHour:= hms::as.hms(time)]
+LubridateDT <- LubridateDT[, month:= lubridate::month(date)]
+LubridateDT <- LubridateDT[, year:= lubridate::year(date)]
+
+
+#Rename and delete double data
+LubridateDT <- LubridateDT[, Read_Date:=NULL]
+names(LubridateDT)[names(LubridateDT) == "Reference"] <- "iD"
+
+```
+
+
+```{r csvExport}
+
+
+finalReshapeDT <- data.table::fwrite(LubridateDT,  "~/greenGridData/externalData//Meridian/1_Reshape/finalReshape.csv")
+
+#Export to server
+
+
+```
