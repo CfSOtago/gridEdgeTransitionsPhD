@@ -48,8 +48,10 @@ MER_raw = data.table::as.data.table(read_excel(file_in("~/greenGridData/external
 ReshapeDT <-  as.data.table(MER_raw)
 ReshapeDT <- ReshapeDT[, Total_Consumption := NULL] #We can do this ourselves
 ReshapeDT <- ReshapeDT[, Month := NULL] #Let us do this with lubridate()
+ReshapeDT <- ReshapeDT[, HHPeriod_49 := NULL] #This does not exist
+ReshapeDT <- ReshapeDT[, HHPeriod_50 := NULL] #This does not exist
 
-ReshapeDT <- gather(ReshapeDT, "obsHalfHour", "kWh", HHPeriod_1:HHPeriod_50) #Combine the wide format into a long format
+ReshapeDT <- gather(ReshapeDT, "obsHalfHour", "kWh", HHPeriod_1:HHPeriod_48) #Combine the wide format into a long format
 
 #Now create a time column
 

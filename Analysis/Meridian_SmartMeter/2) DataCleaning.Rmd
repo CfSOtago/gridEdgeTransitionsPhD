@@ -1,0 +1,78 @@
+---
+title: "2) Data Cleaning"
+author: "Carsten Dortans"
+date: "19/04/2021"
+output: html_document
+---
+
+#This document cleans Meridian smart meter data for our research purpose. It exports a clean .csv file
+
+```{r reqlib}
+
+reqLibs <- c("data.table", # data munching
+             "drake", # what's done stays done
+             "here", # here
+             "lubridate", # dates and times
+             "ggplot2", # plots
+             "skimr", # for skim
+             "knitr", # for kable
+             "readr", # for .csv
+             "hms", # manipulate hms
+             "dplyr", # data munching
+             "kableExtra", # for tables
+             "visNetwork", # for drake's dependency graph
+             "callr", # for drake commands
+             "readxl",
+             "purrr", # for imprting files
+             "networkD3", # for more graphic elements
+             "ggraph",
+             "purrr", # for importing files
+             "zoo",
+             "tidyr",
+             "imputeTS"
+)
+# load them
+woRkflow::loadLibraries(reqLibs)
+
+```
+
+```{r loadData}
+
+ReshapeDT = data.table::as.data.table(read_csv(file_in("~/greenGridData/externalData//Meridian/1_Reshape/finalReshape.csv"))) #Requires step 1: reshaping data 
+
+```
+
+```{r overview}
+
+ReshapeDT <- ReshapeDT[, obsHalfHour:=time]
+ReshapeDT <- ReshapeDT[, time:=NULL]
+
+dataBucket <- copy(ReshapeDT)
+summary(dataBucket$year) # <- Maximum of 2020 and minimum of 2017
+
+#Selecting dates
+
+dataBucket <- dataBucket[date >= "2020-02-17" & date <= "2020-03-15"| #These are teh last two weeks in Feb and the first two in March for summer data without public holidays
+                         date >= "2019-02-18" & date <= "2019-03-17"|
+                         date >= "2018-02-12" & date <= "2018-03-11"|
+                         date >= "2017-02-13" & date <= "2017-03-12"]
+
+#Other years would be:
+# 2021 
+#date >= "2021-02-15" & date <= "2021-03-14"
+# 2016
+#date >= "2016-02-15" & date <= "2016-03-13"
+
+
+
+
+
+
+```
+
+
+
+
+
+
+
