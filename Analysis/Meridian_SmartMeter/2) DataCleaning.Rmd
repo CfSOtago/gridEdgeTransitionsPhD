@@ -182,16 +182,15 @@ min <- min[1:100,]
 
 #Remove entries where no dateTime was recorded n=10,000
 
-t1 <- copy(dataBucketS)
-t1 <- t1[complete.cases(t1$dateTime), ] #Remove entries where no dateTime was recorded n=10,000
-t1 <- t1[, naKWH := sum(is.na(kWh)), keyby =. (dateTime)] #Creates a variable showing NAs in kWh for dateTime
+NAomitDT <- copy(dataBucketS)
+NAomitDT <- NAomitDT[complete.cases(NAomitDT$dateTime), ] #Remove entries where no dateTime was recorded n=10,000
+NAomitDT <- NAomitDT[, naKWH := sum(is.na(kWh)), keyby =. (dateTime)] #Creates a variable showing NAs in kWh for dateTime
 
 
 # assign text colour
 textcol <- "black"
 
-# further modified ggplot
-p <- ggplot(t1,aes(x=day,y=naKWH))+
+p <- ggplot(NAomitDT,aes(x=day,y=naKWH))+
   geom_line(size=0.2, colour= "black")+
   guides(fill=guide_legend(title="Number of NAs"))+
   labs(x="",y="",title="NA distribution for kWh")+
@@ -215,9 +214,33 @@ p <- ggplot(t1,aes(x=day,y=naKWH))+
 
 p
 
+# This is not too bad, let us remove rows where kWh is NA
+
+NAomitDT <- NAomitDT[!is.na(kWh)]
+
+#check
+sum(is.na(NAomitDT)) #no more NAs
+colSums(is.na(NAomitDT)) #check 
+
+#BUT maybe we need to impute missing values based on the mean?
+
 ```
+```{r exportDT}
 
 
+cleanMeridianDT <- data.table::fwrite(NAomitDT,  "~/greenGridData/externalData//Meridian/2_Cleaned/cleanMeridian.csv")
+
+#Export to server
+
+#Info
+#ReshapeDT: input DT
+#dataBucket: the same as ReshapeDT but with POSIXct dateTime with additional lubridate values
+#dataBucketS: Selected dates for years
+#dataBucketPre: entries for pre solar based on dataBucketS
+#dataBucketPost: entries for post solar based on dataBucketS
+#NAomitDT: data clean without NAs but do we need to impute? Based on dataBucketS
+#cleanMeridianDT: Export NAomitDT to server
+```
 
 
 
