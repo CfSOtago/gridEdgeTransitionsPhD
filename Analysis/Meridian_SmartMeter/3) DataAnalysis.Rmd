@@ -1,0 +1,48 @@
+---
+title: "3) DataAnalysis"
+author: "Carsten Dortans"
+date: "22/04/2021"
+output: html_document
+---
+
+#This document analysis Meridian smart meter data for our research purpose. It exports a clean .csv file
+
+```{r reqlib}
+
+reqLibs <- c("data.table", # data munching
+             "drake", # what's done stays done
+             "here", # here
+             "lubridate", # dates and times
+             "ggplot2", # plots
+             "skimr", # for skim
+             "knitr", # for kable
+             "readr", # for .csv
+             "hms", # manipulate hms
+             "dplyr", # data munching
+             "kableExtra", # for tables
+             "visNetwork", # for drake's dependency graph
+             "callr", # for drake commands
+             "readxl",
+             "purrr", # for imprting files
+             "networkD3", # for more graphic elements
+             "ggraph",
+             "purrr", # for importing files
+             "zoo",
+             "tidyr",
+             "imputeTS"
+)
+# load them
+woRkflow::loadLibraries(reqLibs)
+
+```
+
+
+```{r loadData}
+
+CleanDT = data.table::as.data.table(read_csv(file_in("~/greenGridData/externalData//Meridian/2_Cleaned/cleanMeridian.csv"))) #Requires step 2: cleaning data 
+
+CleanDT <- CleanDT[, obsHalfHour:= as_hms(obsHalfHour)] #Converting double() to time 
+
+```
+
+

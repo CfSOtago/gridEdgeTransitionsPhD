@@ -240,6 +240,9 @@ cleanMeridianDT <- data.table::fwrite(NAomitDT,  "~/greenGridData/externalData//
 #dataBucketPost: entries for post solar based on dataBucketS
 #NAomitDT: data clean without NAs but do we need to impute? Based on dataBucketS
 #cleanMeridianDT: Export NAomitDT to server
+
+
+#WARNING No plot has been saved so far with 800 dpi
 ```
 
 
