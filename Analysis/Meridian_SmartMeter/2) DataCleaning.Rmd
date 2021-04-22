@@ -50,9 +50,75 @@ ReshapeDT <- ReshapeDT[, time:=NULL]
 dataBucket <- copy(ReshapeDT)
 summary(dataBucket$year) # <- Maximum of 2020 and minimum of 2017
 
-#Selecting dates
+dataBucket <- dataBucket[, dateTime := as.POSIXct(paste(dataBucket$date, dataBucket$obsHalfHour), format="%Y-%m-%d %H:%M:%S", tz = "Pacific/Auckland")]
+dataBucket <- dataBucket[, day:= lubridate::day(date)]
+dataBucket <- dataBucket[, nObs := .N, keyby = date]
 
-dataBucket <- dataBucket[date >= "2020-02-17" & date <= "2020-03-15"| #These are teh last two weeks in Feb and the first two in March for summer data without public holidays
+
+#How many observations are there over time in total??
+myPlot <- ggplot2::ggplot(dataBucket) +
+  geom_line(aes(x= date,y = nObs )) +
+   labs(x="",y="",title="Number of observations per date")+
+  #labs(x = "date") +
+  #scale_x_continuous( limits = c(0,500))+
+   #  geom_vline(aes(xintercept=mean(totalEnergyWh/1000)),
+          #  color="blue", linetype="dashed", size=0.5)+
+  #facet_wrap( ~ year)+
+  theme(text = element_text(family = "Cambria"),
+        axis.text.x = element_text(colour = "black"),
+        axis.text.y = element_text(colour = "black"),
+        axis.ticks.y = element_line(colour = "black"),
+        axis.ticks.x = element_line(colour = "black"))
+myPlot
+
+
+
+#Now how many are there for Pre and Post solar?
+dataBucketPre <- copy(dataBucket)
+dataBucketPost <- copy(dataBucket)
+dataBucketPre <- dataBucketPre[`SolarPeriod`=="Pre-Solar"]
+dataBucketPost <- dataBucketPost[`SolarPeriod`=="Post-Solar"]
+
+
+myPlot <- ggplot2::ggplot(dataBucketPre) +
+  geom_line(aes(x= date,y = nObs )) +
+   labs(x="",y="",title="Number of observations per date for Pre-Solar")+
+  #labs(x = "date") +
+  #scale_x_continuous( limits = c(0,500))+
+   #  geom_vline(aes(xintercept=mean(totalEnergyWh/1000)),
+          #  color="blue", linetype="dashed", size=0.5)+
+  #facet_wrap( ~ year)+
+  theme(text = element_text(family = "Cambria"),
+        axis.text.x = element_text(colour = "black"),
+        axis.text.y = element_text(colour = "black"),
+        axis.ticks.y = element_line(colour = "black"),
+        axis.ticks.x = element_line(colour = "black"))
+myPlot
+
+myPlot <- ggplot2::ggplot(dataBucketPost) +
+  geom_line(aes(x= date,y = nObs )) +
+   labs(x="",y="nObs",title="Number of observations per date for Post-Solar")+
+  #labs(x = "date") +
+  #scale_x_continuous( limits = c(0,500))+
+   #  geom_vline(aes(xintercept=mean(totalEnergyWh/1000)),
+          #  color="blue", linetype="dashed", size=0.5)+
+  #facet_wrap( ~ year)+
+  theme(text = element_text(family = "Cambria"),
+        axis.text.x = element_text(colour = "black"),
+        axis.text.y = element_text(colour = "black"),
+        axis.ticks.y = element_line(colour = "black"),
+        axis.ticks.x = element_line(colour = "black"))
+myPlot
+
+
+
+```
+
+```{r selectingDates}
+
+#Selecting dates
+dataBucketS <- copy(dataBucket)
+dataBucketS <- dataBucketS[date >= "2020-02-17" & date <= "2020-03-15"| #These are teh last two weeks in Feb and the first two in March for summer data without public holidays
                          date >= "2019-02-18" & date <= "2019-03-17"|
                          date >= "2018-02-12" & date <= "2018-03-11"|
                          date >= "2017-02-13" & date <= "2017-03-12"]
@@ -64,11 +130,96 @@ dataBucket <- dataBucket[date >= "2020-02-17" & date <= "2020-03-15"| #These are
 #date >= "2016-02-15" & date <= "2016-03-13"
 
 
-
-
+myPlot <- ggplot2::ggplot(dataBucketS) +
+  geom_line(aes(x= day,y = nObs )) +
+  #labs(x = "Seaonal energy (kWh)") +
+  #scale_x_continuous( limits = c(0,500))+
+   #  geom_vline(aes(xintercept=mean(totalEnergyWh/1000)),
+          #  color="blue", linetype="dashed", size=0.5)+
+  labs(x="",y="nObs",title="Number of observations per date: selected dates")+
+  facet_wrap( ~ year)+
+  theme(text = element_text(family = "Cambria"),
+        axis.text.x = element_text(colour = "black"),
+        axis.text.y = element_text(colour = "black"),
+        axis.ticks.y = element_line(colour = "black"),
+        axis.ticks.x = element_line(colour = "black"))
+myPlot
 
 
 ```
+
+
+
+```{r naAnalysis}
+
+print(skim(dataBucketS))
+
+#We see that kWh has a 94% complete rate and dateTime 98% for the extracted time period
+
+print(colSums(is.na(dataBucketS))) # Missing values: kWh:27,000  obsHalfHour: 10,000  dateTime: 10,000
+
+print(which(is.na(dataBucketS$kWh)))
+
+# Now let us have a look at the density of kWh values
+
+myPlot <- ggplot2::ggplot(dataBucketS) +
+  geom_density(aes(x= kWh)) +
+  theme(text = element_text(family = "Cambria"),
+        axis.text.x = element_text(colour = "black"),
+        axis.text.y = element_text(colour = "black"),
+        axis.ticks.y = element_line(colour = "black"),
+        axis.ticks.x = element_line(colour = "black"))
+myPlot
+
+# This does not look too bad!
+max <- copy(dataBucketS)
+max <- max[with(max,order(-kWh)),]
+max <- max[1:100,]
+
+min <- copy(dataBucketS)
+min <- min[with(min,order(kWh)),]
+min <- min[1:100,]
+
+#Remove entries where no dateTime was recorded n=10,000
+
+t1 <- copy(dataBucketS)
+t1 <- t1[complete.cases(t1$dateTime), ] #Remove entries where no dateTime was recorded n=10,000
+t1 <- t1[, naKWH := sum(is.na(kWh)), keyby =. (dateTime)] #Creates a variable showing NAs in kWh for dateTime
+
+
+# assign text colour
+textcol <- "black"
+
+# further modified ggplot
+p <- ggplot(t1,aes(x=day,y=naKWH))+
+  geom_line(size=0.2, colour= "black")+
+  guides(fill=guide_legend(title="Number of NAs"))+
+  labs(x="",y="",title="NA distribution for kWh")+
+  facet_wrap(~ year)+
+
+  #coord_fixed()+
+  theme_grey(base_size=10)+
+  theme(legend.position="right",legend.direction="vertical",
+        legend.title=element_text(colour=textcol),
+        legend.margin=margin(grid::unit(0,"cm")),
+        legend.text=element_text(colour=textcol,size=7,face="bold"),
+        legend.key.height=grid::unit(0.8,"cm"),
+        legend.key.width=grid::unit(0.2,"cm"),
+        axis.text.x=element_text(size=10,colour=textcol),
+        axis.text.y=element_text(vjust=0.2,colour=textcol),
+        axis.ticks=element_line(size=0.4),
+        plot.background=element_blank(),
+        panel.border=element_blank(),
+        plot.margin=margin(0.7,0.4,0.1,0.2,"cm"),
+        plot.title=element_text(colour=textcol,hjust=0,size=14,face="bold"))
+
+p
+
+```
+
+
+
+
 
 
 
