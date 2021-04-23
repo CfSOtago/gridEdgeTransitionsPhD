@@ -42,7 +42,28 @@ woRkflow::loadLibraries(reqLibs)
 CleanDT = data.table::as.data.table(read_csv(file_in("~/greenGridData/externalData//Meridian/2_Cleaned/cleanMeridian.csv"))) #Requires step 2: cleaning data 
 
 CleanDT <- CleanDT[, obsHalfHour:= as_hms(obsHalfHour)] #Converting double() to time 
+CleanDT <- CleanDT[, dateTime:=as_datetime(dateTime, tz="Pacific/Auckland")] #No UTC please.....
 
 ```
 
+```{r buildingMean}
 
+
+# Calculate sum of kWh for each day and iD BUT: How to make sure that every day 48 values are considered? Do we need to impute data so that we have 48 obs for each day? What if a day is missing for an iD? 
+
+
+# SO we want 48 steps for each iD for 28 days of data. Otherwise we wouldn't comapre apples with apples 
+
+
+
+
+
+
+
+
+
+
+
+
+
+```

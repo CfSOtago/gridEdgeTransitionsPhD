@@ -180,11 +180,9 @@ min <- copy(dataBucketS)
 min <- min[with(min,order(kWh)),]
 min <- min[1:100,]
 
-#Remove entries where no dateTime was recorded n=10,000
 
 NAomitDT <- copy(dataBucketS)
-NAomitDT <- NAomitDT[complete.cases(NAomitDT$dateTime), ] #Remove entries where no dateTime was recorded n=10,000
-NAomitDT <- NAomitDT[, naKWH := sum(is.na(kWh)), keyby =. (dateTime)] #Creates a variable showing NAs in kWh for dateTime
+NAomitDT <- NAomitDT[, naKWH := sum(is.na(kWh)), keyby =. (date)] #Creates a variable showing NAs in kWh for date
 
 
 # assign text colour
@@ -193,7 +191,7 @@ textcol <- "black"
 p <- ggplot(NAomitDT,aes(x=day,y=naKWH))+
   geom_line(size=0.2, colour= "black")+
   guides(fill=guide_legend(title="Number of NAs"))+
-  labs(x="",y="",title="NA distribution for kWh")+
+  labs(x="",y="",title="NA distribution for kWh per date")+
   facet_wrap(~ year)+
 
   #coord_fixed()+
@@ -214,6 +212,14 @@ p <- ggplot(NAomitDT,aes(x=day,y=naKWH))+
 
 p
 
+
+
+```
+
+```{r imputeData}
+
+
+NAomitDT <- NAomitDT[complete.cases(NAomitDT$dateTime), ] #Remove entries where no dateTime was recorded n=10,000
 # This is not too bad, let us remove rows where kWh is NA
 
 NAomitDT <- NAomitDT[!is.na(kWh)]
@@ -223,8 +229,41 @@ sum(is.na(NAomitDT)) #no more NAs
 colSums(is.na(NAomitDT)) #check 
 
 #BUT maybe we need to impute missing values based on the mean?
+# Calculate sum of kWh for each day and iD BUT: How to make sure that every day 48 values are considered? Do we need to impute data so that we have 48 obs for each day? What if a day is missing for an iD? 
+
+
+# SO we want 48 steps for each iD for 28 days of data. Otherwise we wouldn't comapre apples with apples 
+# How many rows are we aupposed to have? number of iDs x 48 x 28
+uniqueID <- copy(NAomitDT)
+uniqueID <- uniqueID[, .(unique= unique(NAomitDT$iD), by =. (year))] # 182 iDs
+
+reqRows <- 182*48*28 # 244,608 BUT not all iDs were monitored for every year
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ```
+
+
+
+
 ```{r exportDT}
 
 
