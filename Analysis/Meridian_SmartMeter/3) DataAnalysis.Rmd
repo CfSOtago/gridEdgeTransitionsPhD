@@ -54,15 +54,71 @@ CleanDT <- CleanDT[, dateTime:=as_datetime(dateTime, tz="Pacific/Auckland")] #No
 
 # SO we want 48 steps for each iD for 28 days of data. Otherwise we wouldn't comapre apples with apples 
 
+sumDT <- copy(CleanDT)
+
+sumDT <- sumDT [, nObs:= .N, keyby =. (iD, SolarPeriod)]
+
+sumDT <- sumDT[, sumKWH := sum(kWh), keyby =.(iD, SolarPeriod)]
+
+sumDT <- sumDT[, portion := sumKWH/nObs]
+
+
+sumDT <- sumDT[, scale := portion*48*28]
+
+
+sumDT <- sumDT[, .(prepost = scale), keyby =.(iD, SolarPeriod)]
+
+sumDT <- unique(sumDT)
+
+
+sumDT <- spread(sumDT, SolarPeriod, prepost)
+
+
+sumDT <- sumDT[, diffper := (`Post-Solar`/`Pre-Solar`)*(-100)]
+
+
+# Remove NA: some households did not have both pre/post data 
+NAomitDT <- NAomitDT[!is.na(kWh)]
+
+sumDT <- sumDT[!is.na(diffper)]
 
 
 
+myPlot <- ggplot2::ggplot(sumDT) +
+  geom_point(aes(x= `Pre-Solar`,y = diffper )) +
+   labs(x="Initial consumption over four weeks in kWh (summer)",y="Change in consumption post solar in %",title="Initial consumption and post solar change (%)")+
+  #labs(x = "date") +
+  #scale_x_continuous( limits = c(0,500))+
+   #  geom_vline(aes(xintercept=mean(totalEnergyWh/1000)),
+          #  color="blue", linetype="dashed", size=0.5)+
+  #facet_wrap( ~ year)+
+  theme(text = element_text(family = "Cambria"),
+        axis.text.x = element_text(colour = "black"),
+        axis.text.y = element_text(colour = "black"),
+        axis.ticks.y = element_line(colour = "black"),
+        axis.ticks.x = element_line(colour = "black"))
+myPlot
 
 
 
+myPlot <- ggplot2::ggplot(sumDT) +
+  geom_density(aes(x= diffper )) +
+   labs(x="Change in consumption post solar in % (summer)",y="density",title="Density of post solar change (summer)")+
+  #labs(x = "date") +
+  #scale_x_continuous( limits = c(0,500))+
+   #  geom_vline(aes(xintercept=mean(totalEnergyWh/1000)),
+          #  color="blue", linetype="dashed", size=0.5)+
+  #facet_wrap( ~ year)+
+  theme(text = element_text(family = "Cambria"),
+        axis.text.x = element_text(colour = "black"),
+        axis.text.y = element_text(colour = "black"),
+        axis.ticks.y = element_line(colour = "black"),
+        axis.ticks.x = element_line(colour = "black"))
+myPlot
 
 
 
+sum(sumDT$diffper<0)
 
 
 
