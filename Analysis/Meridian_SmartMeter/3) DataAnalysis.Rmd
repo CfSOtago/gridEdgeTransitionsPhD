@@ -74,13 +74,16 @@ sumDT <- unique(sumDT)
 sumDT <- spread(sumDT, SolarPeriod, prepost)
 
 
-sumDT <- sumDT[, diffper := (`Post-Solar`/`Pre-Solar`)*(-100)]
+sumDT <- sumDT[, diffkWh := (`Pre-Solar`-`Post-Solar`)]
 
 
 # Remove NA: some households did not have both pre/post data 
-NAomitDT <- NAomitDT[!is.na(kWh)]
 
-sumDT <- sumDT[!is.na(diffper)]
+
+sumDT <- sumDT[!is.na(diffkWh)]
+
+
+sumDT <-sumDT[, diffper := (-diffkWh/`Pre-Solar`)*100]
 
 
 
@@ -120,6 +123,25 @@ myPlot
 
 sum(sumDT$diffper<0)
 
+
+
+
+
+
+myPlot <- ggplot2::ggplot(sumDT) +
+  geom_boxplot(aes(x= diffper )) +
+   labs(x="Change in consumption post solar in % (summer)",y="density",title="Density of post solar change (summer)")+
+  #labs(x = "date") +
+  #scale_x_continuous( limits = c(0,500))+
+   #  geom_vline(aes(xintercept=mean(totalEnergyWh/1000)),
+          #  color="blue", linetype="dashed", size=0.5)+
+  #facet_wrap( ~ year)+
+  theme(text = element_text(family = "Cambria"),
+        axis.text.x = element_text(colour = "black"),
+        axis.text.y = element_text(colour = "black"),
+        axis.ticks.y = element_line(colour = "black"),
+        axis.ticks.x = element_line(colour = "black"))
+myPlot
 
 
 ```
