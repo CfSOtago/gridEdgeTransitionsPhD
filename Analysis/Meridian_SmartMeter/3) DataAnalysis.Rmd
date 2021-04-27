@@ -56,25 +56,25 @@ CleanDT <- CleanDT[, dateTime:=as_datetime(dateTime, tz="Pacific/Auckland")] #No
 
 sumDT <- copy(CleanDT)
 
-sumDT <- sumDT [, nObs:= .N, keyby =. (iD, SolarPeriod)]
+sumDT <- sumDT [, nObs:= .N, keyby =. (iD, SolarPeriod)] # Counting the number of observations for each iD and solar period
 
-sumDT <- sumDT[, sumKWH := sum(kWh), keyby =.(iD, SolarPeriod)]
+sumDT <- sumDT[, sumKWH := sum(kWh), keyby =.(iD, SolarPeriod)] # calculating total kWh for each iD and solar period over the entire four weeks
 
-sumDT <- sumDT[, portion := sumKWH/nObs]
+sumDT <- sumDT[, portion := sumKWH/nObs] # kWh per observation 
 
 
-sumDT <- sumDT[, scale := portion*48*28]
+sumDT <- sumDT[, scale := portion*48*28] # scaling the proportion to the exact number of observations four the four week period
 
 
 sumDT <- sumDT[, .(prepost = scale), keyby =.(iD, SolarPeriod)]
 
-sumDT <- unique(sumDT)
+sumDT <- unique(sumDT) # getting rid of duplicates
 
 
-sumDT <- spread(sumDT, SolarPeriod, prepost)
+sumDT <- spread(sumDT, SolarPeriod, prepost) # Create a nice data table for plotting where pre solar and post solar are columns 
 
 
-sumDT <- sumDT[, diffkWh := (`Pre-Solar`-`Post-Solar`)]
+sumDT <- sumDT[, diffkWh := (`Pre-Solar`-`Post-Solar`)] # Calc the difference in kWh between pre and post solar 
 
 
 # Remove NA: some households did not have both pre/post data 
@@ -83,18 +83,21 @@ sumDT <- sumDT[, diffkWh := (`Pre-Solar`-`Post-Solar`)]
 sumDT <- sumDT[!is.na(diffkWh)]
 
 
-sumDT <-sumDT[, diffper := (-diffkWh/`Pre-Solar`)*100]
+sumDT <-sumDT[, diffper := (-diffkWh/`Pre-Solar`)*100] # Calc the per cent chnage in kWh between pre and post solar
 
 
 
 myPlot <- ggplot2::ggplot(sumDT) +
   geom_point(aes(x= `Pre-Solar`,y = diffper )) +
-   labs(x="Initial consumption over four weeks in kWh (summer)",y="Change in consumption post solar in %",title="Initial consumption and post solar change (%)")+
+   labs(x="Initial consumption over four weeks in kWh (summer)",y="Change in consumption post solar in %",title="Initial consumption and post solar change (%) outliers=NA")+
+   geom_smooth(aes(x= `Pre-Solar`,y = diffper ), method = "lm")+
+   geom_hline(aes(yintercept = 0)) +
   #labs(x = "date") +
   #scale_x_continuous( limits = c(0,500))+
    #  geom_vline(aes(xintercept=mean(totalEnergyWh/1000)),
           #  color="blue", linetype="dashed", size=0.5)+
   #facet_wrap( ~ year)+
+  ylim(-200, 50)+
   theme(text = element_text(family = "Cambria"),
         axis.text.x = element_text(colour = "black"),
         axis.text.y = element_text(colour = "black"),
@@ -112,6 +115,7 @@ myPlot <- ggplot2::ggplot(sumDT) +
    #  geom_vline(aes(xintercept=mean(totalEnergyWh/1000)),
           #  color="blue", linetype="dashed", size=0.5)+
   #facet_wrap( ~ year)+
+     xlim(-200, 50)+
   theme(text = element_text(family = "Cambria"),
         axis.text.x = element_text(colour = "black"),
         axis.text.y = element_text(colour = "black"),
@@ -129,17 +133,20 @@ sum(sumDT$diffper<0)
 
 
 myPlot <- ggplot2::ggplot(sumDT) +
-  geom_boxplot(aes(x= diffper )) +
-   labs(x="Change in consumption post solar in % (summer)",y="density",title="Density of post solar change (summer)")+
+  geom_boxplot(aes(x= diffper), outlier.shape=NA) +
+   labs(x="Change in consumption post solar in % (summer)",y="density",title="Boxplot of post solar change (summer) outliers = NA")+
   #labs(x = "date") +
   #scale_x_continuous( limits = c(0,500))+
    #  geom_vline(aes(xintercept=mean(totalEnergyWh/1000)),
           #  color="blue", linetype="dashed", size=0.5)+
   #facet_wrap( ~ year)+
+   xlim(-200, 50)+
   theme(text = element_text(family = "Cambria"),
         axis.text.x = element_text(colour = "black"),
-        axis.text.y = element_text(colour = "black"),
-        axis.ticks.y = element_line(colour = "black"),
+      
+        axis.title.y = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(),
         axis.ticks.x = element_line(colour = "black"))
 myPlot
 
