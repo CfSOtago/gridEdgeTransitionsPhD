@@ -1,0 +1,167 @@
+---
+title: "2) Data Cleaning"
+author: "Carsten Dortans"
+date: "19/04/2021"
+output: html_document
+---
+
+#This document cleans Meridian smart meter data for our research purpose. It exports a clean .csv file for use outside solar hours
+
+```{r reqlib}
+
+reqLibs <- c("data.table", # data munching
+             "drake", # what's done stays done
+             "here", # here
+             "lubridate", # dates and times
+             "ggplot2", # plots
+             "skimr", # for skim
+             "knitr", # for kable
+             "readr", # for .csv
+             "hms", # manipulate hms
+             "dplyr", # data munching
+             "kableExtra", # for tables
+             "visNetwork", # for drake's dependency graph
+             "callr", # for drake commands
+             "readxl",
+             "purrr", # for imprting files
+             "networkD3", # for more graphic elements
+             "ggraph",
+             "purrr", # for importing files
+             "zoo",
+             "tidyr",
+             "imputeTS"
+)
+# load them
+woRkflow::loadLibraries(reqLibs)
+
+```
+
+```{r loadData}
+
+ReshapeDT = data.table::as.data.table(read_csv(file_in("~/greenGridData/externalData//Meridian/1_Reshape/finalReshape.csv"))) #Requires step 1: reshaping data from overhead folder
+
+```
+
+```{r overview}
+
+ReshapeDT <- ReshapeDT[, obsHalfHour:=time]
+ReshapeDT <- ReshapeDT[, time:=NULL]
+
+dataBucket <- copy(ReshapeDT)
+summary(dataBucket$year) # <- Maximum of 2020 and minimum of 2017
+
+dataBucket <- dataBucket[, dateTime := as.POSIXct(paste(dataBucket$date, dataBucket$obsHalfHour), format="%Y-%m-%d %H:%M:%S", tz = "Pacific/Auckland")]
+dataBucket <- dataBucket[, day:= lubridate::day(date)]
+dataBucket <- dataBucket[, nObs := .N, keyby = date]
+
+
+
+
+
+
+#Now how many are there for Pre and Post solar?
+dataBucketPre <- copy(dataBucket)
+dataBucketPost <- copy(dataBucket)
+dataBucketPre <- dataBucketPre[`SolarPeriod`=="Pre-Solar"]
+dataBucketPost <- dataBucketPost[`SolarPeriod`=="Post-Solar"]
+
+
+
+```
+
+```{r selectingDates}
+
+#Selecting dates
+dataBucketS <- copy(dataBucket)
+dataBucketS <- dataBucketS[date >= "2020-02-17" & date <= "2020-03-15"| #These are teh last two weeks in Feb and the first two in March for summer data without public holidays
+                         date >= "2019-02-18" & date <= "2019-03-17"|
+                         date >= "2018-02-12" & date <= "2018-03-11"|
+                         date >= "2017-02-13" & date <= "2017-03-12"]
+
+#Selecting times outside of solar. This is based on https://solarview.niwa.co.nz and Invercargill and Cape Reinga comparison. Hours are chosen if for both places hours are 0
+# March no solar output between 19:00-05:00
+# February no solar output between 20:00 and 04:00
+
+#Other years would be:
+# 2021 
+#date >= "2021-02-15" & date <= "2021-03-14"
+# 2016
+#date >= "2016-02-15" & date <= "2016-03-13"
+
+# Now filter times
+
+ind <- (dataBucketS$month == "2") &
+           ((dataBucketS$obsHalfHour > as_hms("06:00:00") &  dataBucketS$obsHalfHour < as_hms("18:00:00"))) # See https://stackoverflow.com/questions/12459169/using-ifelse-to-remove-unwanted-rows-from-the-dataset-in-r :::: Total of twelve hours 
+
+dataBucketS <- dataBucketS[!ind, ]
+  
+ind <- (dataBucketS$month == "3") &
+           ((dataBucketS$obsHalfHour > as_hms("06:00:00") &  dataBucketS$obsHalfHour < as_hms("18:00:00"))) # ::: Total of twelve hours
+
+dataBucketS <- dataBucketS[!ind, ] #Only keep hours where no solar is generated
+
+
+
+
+```
+
+
+
+```{r naAnalysis}
+
+
+NAomitDT <- copy(dataBucketS)
+NAomitDT <- NAomitDT[, naKWH := sum(is.na(kWh)), keyby =. (date)] #Creates a variable showing NAs in kWh for date
+
+```
+
+```{r imputeData}
+
+
+NAomitDT <- NAomitDT[complete.cases(NAomitDT$dateTime), ] #Remove entries where no dateTime was recorded n=10,000
+# This is not too bad, let us remove rows where kWh is NA
+
+NAomitDT <- NAomitDT[!is.na(kWh)]
+
+#check
+sum(is.na(NAomitDT)) #no more NAs
+colSums(is.na(NAomitDT)) #check 
+
+#BUT maybe we need to impute missing values based on the mean?
+# Calculate sum of kWh for each day and iD BUT: How to make sure that every day 48 values are considered? Do we need to impute data so that we have 48 obs for each day? What if a day is missing for an iD? 
+
+
+
+
+
+
+
+
+```
+
+
+
+
+```{r exportDT}
+
+
+noSolarMeridianDT <- data.table::fwrite(NAomitDT,  "~/greenGridData/externalData//Meridian/2_Cleaned/noSolarMeridian.csv")
+
+#Export to server
+
+#Info
+#ReshapeDT: input DT
+#dataBucket: the same as ReshapeDT but with POSIXct dateTime with additional lubridate values
+#dataBucketS: Selected dates for years
+#NAomitDT: data clean without NAs but do we need to impute? Based on dataBucketS
+#noSolarMeridianDT: Export NAomitDT to server
+
+
+#WARNING No plot has been saved so far with 800 dpi
+```
+
+
+
+
+
+
