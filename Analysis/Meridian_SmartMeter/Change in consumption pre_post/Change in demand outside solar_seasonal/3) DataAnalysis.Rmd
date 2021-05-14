@@ -98,7 +98,7 @@ sumDT$season <- factor(sumDT$season, levels = c("Spring", "Summer", "Autumn", "W
 
 myPlot <- ggplot2::ggplot(sumDT) +
   geom_point(aes(x= `Pre-Solar`,y = diffper )) +
-   labs(x="Initial consumption over four weeks in kWh (summer)",y="Change in consumption post solar in %",title="Post solar change (%) outliers=NA, at times with no solar generation")+
+   labs(x="Initial consumption over four weeks in kWh by season",y="Change in consumption post solar in %",title="Post solar change (%) by season, at times with no solar generation")+
    geom_smooth(aes(x= `Pre-Solar`,y = diffper ), method = "lm")+
    geom_hline(aes(yintercept = 0)) +
   #labs(x = "date") +
@@ -119,13 +119,13 @@ myPlot
 
 myPlot <- ggplot2::ggplot(sumDT,aes(x= diffper, colour= season)) +
   geom_density() +
-   labs(x="Change in consumption post solar in % (summer)",y="density",title="Density of post solar change (summer), at times with no solar generation")+
+   labs(x="Change in consumption post solar in % by season",y="density",title="Density of post solar change (by season), at times with no solar generation")+
   #labs(x = "date") +
   #scale_x_continuous( limits = c(0,500))+
    #  geom_vline(aes(xintercept=mean(totalEnergyWh/1000)),
           #  color="blue", linetype="dashed", size=0.5)+
   #facet_wrap( ~ year)+
-     xlim(-200, 50)+
+     xlim(--150, 150)+
   theme(text = element_text(family = "Cambria"),
         axis.text.x = element_text(colour = "black"),
         axis.text.y = element_text(colour = "black"),
@@ -144,7 +144,7 @@ sum(sumDT$diffper<0)
 
 myPlot <- ggplot2::ggplot(sumDT, aes(x= diffper, colour=season, outlier.shape=NA)) +
   geom_boxplot() +
-   labs(x="Change in consumption post solar in % (summer)",y="density",title="Boxplot of post solar change, outliers = NA, at times with no solar generation")+
+   labs(x="Change in consumption post solar in % by season",y="density",title="Boxplot of post solar change by season, at times with no solar generation")+
   #labs(x = "date") +
   #scale_x_continuous( limits = c(0,500))+
    #  geom_vline(aes(xintercept=mean(totalEnergyWh/1000)),

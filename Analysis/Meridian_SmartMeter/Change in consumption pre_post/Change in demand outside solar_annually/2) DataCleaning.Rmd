@@ -88,27 +88,27 @@ scale_fill_continuous(high = "red", low = "green")+
 
 #Selecting dates
 dataBucketS <- copy(dataBucket)
-dataBucketS <- dataBucketS[date >= "2020-02-17" & date <= "2020-03-15"| #SUMMER
-                         date >= "2019-02-18" & date <= "2019-03-17"|
-                         date >= "2018-02-12" & date <= "2018-03-11"|
-                         date >= "2017-02-13" & date <= "2017-03-12"|
+#dataBucketS <- dataBucketS[date >= "2020-02-17" & date <= "2020-03-15"| #SUMMER
+ #                        date >= "2019-02-18" & date <= "2019-03-17"|
+  #                       date >= "2018-02-12" & date <= "2018-03-11"|
+   #                      date >= "2017-02-13" & date <= "2017-03-12"|
+    #                       
+     #                      
+      #                   date >= "2020-04-20" & date <= "2020-05-18"|  #AUTUMN
+       #                  date >= "2019-04-29" & date <= "2019-05-27"|
+        #                 date >= "2018-04-16" & date <= "2018-05-14"|
+         #                date >= "2017-04-24" & date <= "2017-05-22"|
+                           
+          #               date >= "2020-07-20" & date <= "2020-08-17"|  #WINTER
+           #              date >= "2019-07-22" & date <= "2019-08-19"|
+            #             date >= "2018-07-16" & date <= "2018-08-13"|
+             #            date >= "2017-07-17" & date <= "2017-08-14"|
                            
                            
-                         date >= "2020-04-20" & date <= "2020-05-18"|  #AUTUMN
-                         date >= "2019-04-29" & date <= "2019-05-27"|
-                         date >= "2018-04-16" & date <= "2018-05-14"|
-                         date >= "2017-04-24" & date <= "2017-05-22"|
-                           
-                         date >= "2020-07-20" & date <= "2020-08-17"|  #WINTER
-                         date >= "2019-07-22" & date <= "2019-08-19"|
-                         date >= "2018-07-16" & date <= "2018-08-13"|
-                         date >= "2017-07-17" & date <= "2017-08-14"|
-                           
-                           
-                         date >= "2020-11-17" & date <= "2020-11-30"|  #SPRING
-                         date >= "2019-11-18" & date <= "2019-12-02"|
-                         date >= "2018-11-12" & date <= "2018-12-03"|
-                         date >= "2017-11-13" & date <= "2017-12-04"]
+              #           date >= "2020-11-17" & date <= "2020-11-30"|  #SPRING
+               #          date >= "2019-11-18" & date <= "2019-12-02"|
+                #         date >= "2018-11-12" & date <= "2018-12-03"|
+                 #        date >= "2017-11-13" & date <= "2017-12-04"]
                            
 
 
@@ -130,20 +130,31 @@ dataBucketS <- dataBucketS[date >= "2020-02-17" & date <= "2020-03-15"| #SUMMER
 # 2016
 #date >= "2016-02-15" & date <= "2016-03-13"
 
-# Now filter times
+# Now filter times where no solar is apparent 
 
 #SUMMER
-ind <- (dataBucketS$month == "2") &
+ind <- (dataBucketS$month == "12") &
+           ((dataBucketS$obsHalfHour > as_hms("06:00:00") &  dataBucketS$obsHalfHour < as_hms("18:00:00"))) # See https://stackoverflow.com/questions/12459169/using-ifelse-to-remove-unwanted-rows-from-the-dataset-in-r :::: Total of twelve hours 
+
+dataBucketS <- dataBucketS[!ind, ]
+
+ind <- (dataBucketS$month == "1") &
            ((dataBucketS$obsHalfHour > as_hms("06:00:00") &  dataBucketS$obsHalfHour < as_hms("18:00:00"))) # See https://stackoverflow.com/questions/12459169/using-ifelse-to-remove-unwanted-rows-from-the-dataset-in-r :::: Total of twelve hours 
 
 dataBucketS <- dataBucketS[!ind, ]
   
-ind <- (dataBucketS$month == "3") &
+ind <- (dataBucketS$month == "2") &
            ((dataBucketS$obsHalfHour > as_hms("06:00:00") &  dataBucketS$obsHalfHour < as_hms("18:00:00"))) # ::: Total of twelve hours
 
 dataBucketS <- dataBucketS[!ind, ]
 
 #AUTUMN
+
+ind <- (dataBucketS$month == "3") &
+           ((dataBucketS$obsHalfHour > as_hms("06:00:00") &  dataBucketS$obsHalfHour < as_hms("18:00:00"))) # See https://stackoverflow.com/questions/12459169/using-ifelse-to-remove-unwanted-rows-from-the-dataset-in-r :::: Total of twelve hours 
+
+dataBucketS <- dataBucketS[!ind, ]
+
 
 ind <- (dataBucketS$month == "4") &
            ((dataBucketS$obsHalfHour > as_hms("05:00:00") &  dataBucketS$obsHalfHour < as_hms("17:00:00"))) # Total of twelve hours 
@@ -155,7 +166,13 @@ ind <- (dataBucketS$month == "5") &
 
 dataBucketS <- dataBucketS[!ind, ]
 
+
 #WINTER
+
+ind <- (dataBucketS$month == "6") &
+           ((dataBucketS$obsHalfHour > as_hms("06:00:00") &  dataBucketS$obsHalfHour < as_hms("18:00:00"))) # See https://stackoverflow.com/questions/12459169/using-ifelse-to-remove-unwanted-rows-from-the-dataset-in-r :::: Total of twelve hours 
+
+dataBucketS <- dataBucketS[!ind, ]
 
 ind <- (dataBucketS$month == "7") &
            ((dataBucketS$obsHalfHour > as_hms("05:00:00") &  dataBucketS$obsHalfHour < as_hms("17:00:00"))) # Total of twelve hours 
@@ -170,12 +187,17 @@ dataBucketS <- dataBucketS[!ind, ]
 
 #SPRING
 
-ind <- (dataBucketS$month == "11") &
+ind <- (dataBucketS$month == "9") &
+           ((dataBucketS$obsHalfHour > as_hms("06:00:00") &  dataBucketS$obsHalfHour < as_hms("18:00:00"))) # See https://stackoverflow.com/questions/12459169/using-ifelse-to-remove-unwanted-rows-from-the-dataset-in-r :::: Total of twelve hours 
+
+dataBucketS <- dataBucketS[!ind, ]
+
+ind <- (dataBucketS$month == "10") &
            ((dataBucketS$obsHalfHour > as_hms("06:00:00") &  dataBucketS$obsHalfHour < as_hms("18:00:00"))) # Total of twelve hours 
 
 dataBucketS <- dataBucketS[!ind, ]
   
-ind <- (dataBucketS$month == "12") &
+ind <- (dataBucketS$month == "11") &
            ((dataBucketS$obsHalfHour > as_hms("06:00:00") &  dataBucketS$obsHalfHour < as_hms("18:00:00"))) # ::: Total of twelve hours
 
 
@@ -183,10 +205,10 @@ dataBucketS <- dataBucketS[!ind, ] #Only keep hours where no solar is generated
 
 dataBucketS <- dataBucketS[, season := NA]
 
-dataBucketS <- dataBucketS[, season := ifelse(dataBucketS$month=="2" | dataBucketS$month=="3", "Summer", season)]
-dataBucketS <- dataBucketS[, season := ifelse(dataBucketS$month=="4" | dataBucketS$month=="5", "Autumn", season)]
-dataBucketS <- dataBucketS[, season := ifelse(dataBucketS$month=="7" | dataBucketS$month=="8", "Winter", season)]
-dataBucketS <- dataBucketS[, season := ifelse(dataBucketS$month=="11" | dataBucketS$month=="12", "Spring", season)]
+dataBucketS <- dataBucketS[, season := ifelse(dataBucketS$month=="12" | dataBucketS$month=="1" | dataBucketS$month=="2", "Summer", season)]
+dataBucketS <- dataBucketS[, season := ifelse(dataBucketS$month=="3" | dataBucketS$month=="4" | dataBucketS$month=="5", "Autumn", season)]
+dataBucketS <- dataBucketS[, season := ifelse(dataBucketS$month=="6" | dataBucketS$month=="7" | dataBucketS$month=="8", "Winter", season)]
+dataBucketS <- dataBucketS[, season := ifelse(dataBucketS$month=="9" | dataBucketS$month=="10" | dataBucketS$month=="11", "Spring", season)]
 
 
 
