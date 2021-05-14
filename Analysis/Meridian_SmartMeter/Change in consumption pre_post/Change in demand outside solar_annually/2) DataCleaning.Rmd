@@ -236,7 +236,7 @@ colSums(is.na(NAomitDT)) #check
 ```{r exportDT}
 
 
-noSolarMeridianDT <- data.table::fwrite(NAomitDT,  "~/greenGridData/externalData//Meridian/2_Cleaned/noSolarMeridian.csv")
+noSolarMeridianDT <- data.table::fwrite(NAomitDT,  "~/greenGridData/externalData//Meridian/2_Cleaned/noSolarMeridianAnnual.csv")
 
 #Export to server
 
