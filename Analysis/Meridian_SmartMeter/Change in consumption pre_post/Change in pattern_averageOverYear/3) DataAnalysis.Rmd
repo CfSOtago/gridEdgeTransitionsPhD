@@ -58,48 +58,26 @@ CleanDT <- CleanDT[, dateTime:=as_datetime(dateTime, tz="Pacific/Auckland")] #No
 
 sumDT <- copy(CleanDT)
 
-sumDT <- sumDT [, nObs:= .N, keyby =. (iD, SolarPeriod, year )] # Counting the number of observations for each iD and solar period
+sumDT <- sumDT[, kW := kWh*2] # Converts kWh per half hour into kW
 
-sumDT <- sumDT[, sumKWH := sum(kWh), keyby =.(iD, SolarPeriod, year)] # calculating total kWh for each iD and solar period over the entire four weeks
+meanDT <- copy(sumDT)
 
-sumDT <- sumDT[, portion := sumKWH/nObs] # kWh per observation 
-
-
-sumDT <- sumDT[, scale := portion*24*365] # scaling the proportion to the exact number of observations for the four week period #24 half hours in the data, this is 12hrs of non solar data...
-
-# Once we have different length of hours where solar is NOT generating we have to scale appropriately with ifelse(). For now, as both months have twelve hours of no solar generation we can use the proportion above
-
-
-
-
-sumDT <- sumDT[, .(prepost = scale), keyby =.(iD, SolarPeriod, year)]
-
-sumDT <- unique(sumDT) # getting rid of duplicates
-
-
-sumDT <- spread(sumDT, SolarPeriod, prepost) # Create a nice data table for plotting where pre solar and post solar are columns 
-
-
-sumDT <- sumDT[, diffkWh := (`Pre-Solar`-`Post-Solar`)] # Calc the difference in kWh between pre and post solar 
-
-
-# Remove NA: some households did not have both pre/post data 
-
-
-sumDT <- sumDT[!is.na(diffkWh)]
-
-
-sumDT <-sumDT[, diffper := (-diffkWh/`Pre-Solar`)*100] # Calc the per cent change in kWh between pre and post solar
+meanDT <- meanDT[, .(meankW = mean(kW, na.rm = TRUE)), keyby =.(obsHalfHour, SolarPeriod)] # Create mean for kW across dataset iDs for each half hour and SolarPeriod
 
 
 
 
 
 
-myPlot <- ggplot2::ggplot(sumDT) +
-  geom_point(aes(x= `Pre-Solar`,y = diffper )) +
-   labs(x="Initial consumption over one year in kWh",y="Change in consumption post solar in %",title="Post solar change (%), at times with no solar generation")+
-   geom_smooth(aes(x= `Pre-Solar`,y = diffper ), method = "lm")+
+
+
+
+
+
+myPlot <- ggplot2::ggplot(meanDT, aes(x=obsHalfHour, y=meankW, colour=SolarPeriod)) +
+  geom_line() +
+  geom_point()+
+   labs(x="Time of Day",y="Demand (kW)",title="Mean demand across years and iDs for pre/post solar installation")+
    geom_hline(aes(yintercept = 0)) +
   #labs(x = "date") +
   #scale_x_continuous( limits = c(0,500))+
@@ -107,7 +85,7 @@ myPlot <- ggplot2::ggplot(sumDT) +
           #  color="blue", linetype="dashed", size=0.5)+
   #
   #facet_wrap( ~ season)+
-  ylim(-200, 100)+
+  #ylim(-200, 100)+
  # xlim(-200, 50)+
   theme(text = element_text(family = "Cambria"),
         axis.text.x = element_text(colour = "black"),
@@ -117,49 +95,6 @@ myPlot <- ggplot2::ggplot(sumDT) +
 myPlot
 
 
-
-myPlot <- ggplot2::ggplot(sumDT,aes(x= diffper, colour= year)) +
-  geom_density() +
-   labs(x="Change in consumption post solar in %",y="density",title="Density of post solar change, at times with no solar generation")+
-  #labs(x = "date") +
-  #scale_x_continuous( limits = c(0,500))+
-   #  geom_vline(aes(xintercept=mean(totalEnergyWh/1000)),
-          #  color="blue", linetype="dashed", size=0.5)+
-  #facet_wrap( ~ year)+
-     xlim(-150, 150)+
-  theme(text = element_text(family = "Cambria"),
-        axis.text.x = element_text(colour = "black"),
-        axis.text.y = element_text(colour = "black"),
-        axis.ticks.y = element_line(colour = "black"),
-        axis.ticks.x = element_line(colour = "black"))
-myPlot
-
-
-
-sum(sumDT$diffper<0)
-
-
-
-
-
-
-myPlot <- ggplot2::ggplot(sumDT, aes(x= diffper, colour=year, outlier.shape=NA)) +
-  geom_boxplot() +
-   labs(x="Change in consumption post solar in %",y="density",title="Boxplot of post solar change, at times with no solar generation")+
-  #labs(x = "date") +
-  #scale_x_continuous( limits = c(0,500))+
-   #  geom_vline(aes(xintercept=mean(totalEnergyWh/1000)),
-          #  color="blue", linetype="dashed", size=0.5)+
-  #facet_wrap( ~ year)+
-   xlim(-100, 100)+
-  theme(text = element_text(family = "Cambria"),
-        axis.text.x = element_text(colour = "black"),
-      
-        axis.title.y = element_blank(),
-        axis.text.y = element_blank(),
-        axis.ticks.y = element_blank(),
-        axis.ticks.x = element_line(colour = "black"))
-myPlot
 
 
 ```
