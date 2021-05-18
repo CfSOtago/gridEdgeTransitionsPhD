@@ -1,0 +1,103 @@
+---
+title: "3) DataAnalysis"
+author: "Carsten Dortans"
+date: "22/04/2021"
+output: html_document
+---
+
+#This document analysis Meridian smart meter data for our research purpose. It exports a clean .csv file
+
+```{r reqlib}
+
+reqLibs <- c("data.table", # data munching
+             "drake", # what's done stays done
+             "here", # here
+             "lubridate", # dates and times
+             "ggplot2", # plots
+             "skimr", # for skim
+             "knitr", # for kable
+             "readr", # for .csv
+             "hms", # manipulate hms
+             "dplyr", # data munching
+             "kableExtra", # for tables
+             "visNetwork", # for drake's dependency graph
+             "callr", # for drake commands
+             "readxl",
+             "purrr", # for imprting files
+             "networkD3", # for more graphic elements
+             "ggraph",
+             "purrr", # for importing files
+             "zoo",
+             "tidyr",
+             "imputeTS"
+)
+# load them
+woRkflow::loadLibraries(reqLibs)
+
+```
+
+
+```{r loadData}
+
+CleanDT = data.table::as.data.table(read_csv(file_in("~/greenGridData/externalData//Meridian/2_Cleaned/averageProfileYear.csv"))) #Requires step 2: cleaning data 
+
+CleanDT <- CleanDT[, obsHalfHour:= as_hms(obsHalfHour)] #Converting double() to time 
+CleanDT <- CleanDT[, dateTime:=as_datetime(dateTime, tz="Pacific/Auckland")] #No UTC please.....
+
+
+
+```
+
+```{r buildingMean}
+
+
+# Calculate sum of kWh for each day and iD BUT: How to make sure that every day 48 values are considered? Do we need to impute data so that we have 48 obs for each day? What if a day is missing for an iD? 
+
+
+# SO we want 48 steps for each iD for 28 days of data. Otherwise we wouldn't comapre apples with apples 
+
+sumDT <- copy(CleanDT)
+
+sumDT <- sumDT[, kW := kWh*2] # Converts kWh per half hour into kW
+
+meanDT <- copy(sumDT)
+
+meanDT <- meanDT[, .(meankW = mean(kW, na.rm = TRUE)), keyby =.(month, SolarPeriod, iD)] # Create mean for kW across dataset iDs for each half hour and SolarPeriod
+
+meanDT <- spread(meanDT, SolarPeriod, meankW ) # Create a nice data table for plotting where pre solar and post solar are columns 
+
+meanDT <- meanDT[, diffper := (`Pre-Solar` - `Post-Solar`)/`Pre-Solar`*100] # Reduction post solar installation in %
+
+meanDT <- meanDT[!is.na(diffper)]
+
+
+
+
+
+
+myPlot <- ggplot2::ggplot(meanDT, aes(x=month, y=diffper,  group=month)) +
+  geom_boxplot(outlier.shape=NA) +
+   labs(x="Month",y="Reduction in demand (%)",title="Mean monthly demand reduction after solar installation across iDs")+
+   geom_hline(aes(yintercept = 0)) +
+  #labs(x = "date") +
+  #scale_x_continuous( limits = c(0,500))+
+   #  geom_vline(aes(xintercept=mean(totalEnergyWh/1000)),
+          #  color="blue", linetype="dashed", size=0.5)+
+  #
+  #facet_wrap( ~ season)+
+  ylim(-50, 200)+
+ # xlim(1, 12)+
+  theme(text = element_text(family = "Cambria"),
+        axis.text.x = element_text(colour = "black"),
+        axis.text.y = element_text(colour = "black"),
+        axis.ticks.y = element_line(colour = "black"),
+        axis.ticks.x = element_line(colour = "black"))+
+  scale_x_continuous(breaks = c(1,2,3,4,5,6,7,8,9,10,11,12))
+#  scale_x_continuous(labels = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"))
+
+myPlot
+
+
+
+
+```
