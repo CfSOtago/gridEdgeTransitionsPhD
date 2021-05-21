@@ -62,7 +62,9 @@ sumDT <- sumDT[, kW := kWh*2] # Converts kWh per half hour into kW
 
 meanDT <- copy(sumDT)
 
-meanDT <- meanDT[, .(meankW = mean(kW, na.rm = TRUE)), keyby =.(month, SolarPeriod, iD)] # Create mean for kW across dataset iDs for each half hour and SolarPeriod
+meanDT <- meanDT[, dOy:= lubridate::yday(date)] #Creating a variable that counts the day of the year based on date
+
+meanDT <- meanDT[, .(meankW = mean(kW, na.rm = TRUE)), keyby =.(dOy, SolarPeriod, iD)] # Create mean for kW across dataset iDs for each half hour and SolarPeriod
 
 meanDT <- spread(meanDT, SolarPeriod, meankW ) # Create a nice data table for plotting where pre solar and post solar are columns 
 
@@ -74,24 +76,37 @@ meanDT <- meanDT[!is.na(diffper)]
 
 
 
-
-myPlot <- ggplot2::ggplot(meanDT, aes(x=month, y=diffper)) +
-  geom_boxplot() +
-   labs(x="Time of Day",y="Demand (kW)",title="Mean demand across years and iDs for pre/post solar installation")+
-   #geom_hline(aes(yintercept = 0)) +
+myPlot <- ggplot2::ggplot(meanDT, aes(x=dOy, y=diffper,  group=dOy)) +
+  geom_boxplot(outlier.shape=NA, colour="black") +
+  stat_summary(fun = median,
+               geom = "line",
+               aes(group = 1),
+               col = "red",
+               size =2)+
+  
+   labs(x="Day of the year",y="Reduction in demand (%)",title="Mean daily demand reduction after solar installation across iDs")+
+   geom_hline(aes(yintercept = 0)) +
   #labs(x = "date") +
   #scale_x_continuous( limits = c(0,500))+
    #  geom_vline(aes(xintercept=mean(totalEnergyWh/1000)),
           #  color="blue", linetype="dashed", size=0.5)+
   #
   #facet_wrap( ~ season)+
-  #ylim(-200, 100)+
- # xlim(-200, 50)+
+  ylim(-50, 200)+
+ # xlim(1, 12)+
   theme(text = element_text(family = "Cambria"),
         axis.text.x = element_text(colour = "black"),
         axis.text.y = element_text(colour = "black"),
         axis.ticks.y = element_line(colour = "black"),
         axis.ticks.x = element_line(colour = "black"))
+  #scale_x_continuous(breaks = c(1,2,3,4,5,6,7,8,9,10,11,12))
+#  scale_x_continuous(labels = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"))
+
+
+
+
+
+
 myPlot
 
 
