@@ -1,0 +1,398 @@
+---
+title: "2) Data Cleaning"
+author: "Carsten Dortans"
+date: "19/04/2021"
+output: html_document
+---
+
+#This document analysis Meridian smart meter data for descriprive information. 
+```{r reqlib}
+
+reqLibs <- c("data.table", # data munching
+             "drake", # what's done stays done
+             "here", # here
+             "lubridate", # dates and times
+             "ggplot2", # plots
+             "skimr", # for skim
+             "knitr", # for kable
+             "readr", # for .csv
+             "hms", # manipulate hms
+             "dplyr", # data munching
+             "kableExtra", # for tables
+             "visNetwork", # for drake's dependency graph
+             "callr", # for drake commands
+             "readxl",
+             "purrr", # for imprting files
+             "networkD3", # for more graphic elements
+             "ggraph",
+             "purrr", # for importing files
+             "zoo",
+             "tidyr",
+             "imputeTS",
+             "pastecs" #for descritive analyses,
+            # "esquisse" #interactive ggplot
+)
+# load them
+woRkflow::loadLibraries(reqLibs)
+
+```
+
+```{r loadData}
+
+dataDT = data.table::as.data.table(read_csv(file_in("~/greenGridData/externalData//Meridian/1_Reshape/finalReshape.csv"))) #Requires step 1: reshaping data from overhead folder
+
+```
+
+```{r summary}
+
+summary(dataDT)
+
+```
+
+
+```{r pastecskWh}
+
+res <- stat.desc(dataDT$kWh)
+round(res, 2) #7.4% NA or 0
+
+```
+
+```{r boxplotKWh}
+
+myPlot <- ggplot2::ggplot(dataDT, aes(x= time, y=kWh, group=time)) +
+  geom_boxplot(outlier.shape=NA) +
+   labs(x="Time of day",y="kWh",title="kWh distribution over the years and houses")+
+   ylim(-2.5,2.5)+
+  theme(text = element_text(family = "Cambria"),
+        axis.text.x = element_text(colour = "black"),
+        axis.ticks.x = element_line(colour = "black"))
+  # scale_x_time(breaks = scales::breaks_width("30 min"))
+
+myPlot
+
+
+```
+
+```{r preSolarBoxplot}
+
+pre <- dataDT[!(dataDT$SolarPeriod=="Post-Solar"),]
+
+
+myPlot <- ggplot2::ggplot(pre, aes(x= time, y=kWh, group=time)) +
+  geom_boxplot(outlier.shape=NA) +
+   labs(x="Time of day",y="kWh",title="kWh distribution post solar over the years and houses")+
+   ylim(-2.5,2.5)+
+  theme(text = element_text(family = "Cambria"),
+        axis.text.x = element_text(colour = "black"),
+        axis.ticks.x = element_line(colour = "black"))
+  # scale_x_time(breaks = scales::breaks_width("30 min"))
+
+myPlot
+
+
+```
+
+```{r postSolarBoxplot}
+
+post <- dataDT[!(dataDT$SolarPeriod=="Pre-Solar"),]
+
+
+myPlot <- ggplot2::ggplot(post, aes(x= time, y=kWh, group=time)) +
+  geom_boxplot(outlier.shape=NA) +
+   labs(x="Time of day",y="kWh",title="kWh distribution pre solar over the years and houses")+
+   ylim(-2.5,2.5)+
+  theme(text = element_text(family = "Cambria"),
+        axis.text.x = element_text(colour = "black"),
+        axis.ticks.x = element_line(colour = "black"))
+  # scale_x_time(breaks = scales::breaks_width("30 min"))
+
+myPlot
+
+```
+
+
+
+
+```{r whereNA}
+
+plotDT <- dataDT[is.na(kWh), .(nNA = .N), keyby = .(date, time)] # count the NAs by ID and date
+
+ggplot(plotDT, aes(x = date, y = time, fill = nNA)) +
+geom_tile() +
+scale_fill_continuous(high = "red", low = "green")+
+  geom_tile(width=0.6,height=0.6)
+
+```
+
+```{r howManyIDs}
+
+tally(group_by(dataDT, iD))
+
+```
+
+```{r nObsOverTime}
+
+
+nObsDT <- dataDT
+nObsDT <- nObsDT[, nObs := ifelse(is.na(nObsDT$kWh), 0,1 )]
+nObsDT <- nObsDT[, sumnObs:=sum(nObs), keyby =.(date)]
+
+
+myPlot <- ggplot2::ggplot(nObsDT, aes(x= date, y=sumnObs)) +
+  geom_line() +
+   labs(x="Date",y="nObs",title="nObs that are not NA")+
+  # ylim(-2.5,2.5)+
+  theme(text = element_text(family = "Cambria"),
+        axis.text.x = element_text(colour = "black"),
+        axis.ticks.x = element_line(colour = "black"))
+  # scale_x_time(breaks = scales::breaks_width("30 min"))
+
+myPlot
+
+
+
+
+```
+
+
+
+
+
+
+
+
+
+```{r overview}
+
+ReshapeDT <- ReshapeDT[, obsHalfHour:=time]
+ReshapeDT <- ReshapeDT[, time:=NULL]
+
+dataBucket <- copy(ReshapeDT)
+summary(dataBucket$year) # <- Maximum of 2020 and minimum of 2017
+
+dataBucket <- dataBucket[, dateTime := as.POSIXct(paste(dataBucket$date, dataBucket$obsHalfHour), format="%Y-%m-%d %H:%M:%S", tz = "Pacific/Auckland")]
+dataBucket <- dataBucket[, day:= lubridate::day(date)]
+dataBucket <- dataBucket[, nObs := .N, keyby = date]
+
+
+
+
+#Now how many are there for Pre and Post solar?
+dataBucketPre <- copy(dataBucket)
+dataBucketPost <- copy(dataBucket)
+dataBucketPre <- dataBucketPre[`SolarPeriod`=="Pre-Solar"]
+dataBucketPost <- dataBucketPost[`SolarPeriod`=="Post-Solar"]
+
+
+
+
+
+```
+
+```{r whereNA}
+
+plotDT <- dataBucket[is.na(kWh), .(nNA = .N), keyby = .(iD, date)] # count the NAs by ID and date
+
+ggplot(plotDT, aes(x = date, y = iD, fill = nNA)) +
+geom_tile() +
+scale_fill_continuous(high = "red", low = "green")+
+  geom_tile(width=0.6,height=0.6)
+
+
+
+```
+
+```{r selectingDates}
+
+#Selecting dates
+dataBucketS <- copy(dataBucket)
+#dataBucketS <- dataBucketS[date >= "2020-02-17" & date <= "2020-03-15"| #SUMMER
+ #                        date >= "2019-02-18" & date <= "2019-03-17"|
+  #                       date >= "2018-02-12" & date <= "2018-03-11"|
+   #                      date >= "2017-02-13" & date <= "2017-03-12"|
+    #                       
+     #                      
+      #                   date >= "2020-04-20" & date <= "2020-05-18"|  #AUTUMN
+       #                  date >= "2019-04-29" & date <= "2019-05-27"|
+        #                 date >= "2018-04-16" & date <= "2018-05-14"|
+         #                date >= "2017-04-24" & date <= "2017-05-22"|
+                           
+          #               date >= "2020-07-20" & date <= "2020-08-17"|  #WINTER
+           #              date >= "2019-07-22" & date <= "2019-08-19"|
+            #             date >= "2018-07-16" & date <= "2018-08-13"|
+             #            date >= "2017-07-17" & date <= "2017-08-14"|
+                           
+                           
+              #           date >= "2020-11-17" & date <= "2020-11-30"|  #SPRING
+               #          date >= "2019-11-18" & date <= "2019-12-02"|
+                #         date >= "2018-11-12" & date <= "2018-12-03"|
+                 #        date >= "2017-11-13" & date <= "2017-12-04"]
+                           
+
+
+
+
+
+
+
+
+
+
+#Selecting times outside of solar. This is based on https://solarview.niwa.co.nz and Invercargill and Cape Reinga comparison. Hours are chosen if for both places hours are 0
+# March no solar output between 19:00-05:00
+# February no solar output between 20:00 and 04:00
+
+#Other years would be:
+# 2021 
+#date >= "2021-02-15" & date <= "2021-03-14"
+# 2016
+#date >= "2016-02-15" & date <= "2016-03-13"
+
+# Now filter times where no solar is apparent 
+
+#SUMMER
+ind <- (dataBucketS$month == "12") &
+           ((dataBucketS$obsHalfHour > as_hms("06:00:00") &  dataBucketS$obsHalfHour < as_hms("18:00:00"))) # See https://stackoverflow.com/questions/12459169/using-ifelse-to-remove-unwanted-rows-from-the-dataset-in-r :::: Total of twelve hours 
+
+dataBucketS <- dataBucketS[!ind, ]
+
+ind <- (dataBucketS$month == "1") &
+           ((dataBucketS$obsHalfHour > as_hms("06:00:00") &  dataBucketS$obsHalfHour < as_hms("18:00:00"))) # See https://stackoverflow.com/questions/12459169/using-ifelse-to-remove-unwanted-rows-from-the-dataset-in-r :::: Total of twelve hours 
+
+dataBucketS <- dataBucketS[!ind, ]
+  
+ind <- (dataBucketS$month == "2") &
+           ((dataBucketS$obsHalfHour > as_hms("06:00:00") &  dataBucketS$obsHalfHour < as_hms("18:00:00"))) # ::: Total of twelve hours
+
+dataBucketS <- dataBucketS[!ind, ]
+
+#AUTUMN
+
+ind <- (dataBucketS$month == "3") &
+           ((dataBucketS$obsHalfHour > as_hms("06:00:00") &  dataBucketS$obsHalfHour < as_hms("18:00:00"))) # See https://stackoverflow.com/questions/12459169/using-ifelse-to-remove-unwanted-rows-from-the-dataset-in-r :::: Total of twelve hours 
+
+dataBucketS <- dataBucketS[!ind, ]
+
+
+ind <- (dataBucketS$month == "4") &
+           ((dataBucketS$obsHalfHour > as_hms("05:00:00") &  dataBucketS$obsHalfHour < as_hms("17:00:00"))) # Total of twelve hours 
+
+dataBucketS <- dataBucketS[!ind, ]
+  
+ind <- (dataBucketS$month == "5") &
+           ((dataBucketS$obsHalfHour > as_hms("05:00:00") &  dataBucketS$obsHalfHour < as_hms("17:00:00"))) # ::: Total of twelve hours
+
+dataBucketS <- dataBucketS[!ind, ]
+
+
+#WINTER
+
+ind <- (dataBucketS$month == "6") &
+           ((dataBucketS$obsHalfHour > as_hms("06:00:00") &  dataBucketS$obsHalfHour < as_hms("18:00:00"))) # See https://stackoverflow.com/questions/12459169/using-ifelse-to-remove-unwanted-rows-from-the-dataset-in-r :::: Total of twelve hours 
+
+dataBucketS <- dataBucketS[!ind, ]
+
+ind <- (dataBucketS$month == "7") &
+           ((dataBucketS$obsHalfHour > as_hms("05:00:00") &  dataBucketS$obsHalfHour < as_hms("17:00:00"))) # Total of twelve hours 
+
+dataBucketS <- dataBucketS[!ind, ]
+  
+ind <- (dataBucketS$month == "8") &
+           ((dataBucketS$obsHalfHour > as_hms("06:00:00") &  dataBucketS$obsHalfHour < as_hms("18:00:00"))) # ::: Total of twelve hours
+
+dataBucketS <- dataBucketS[!ind, ]
+
+
+#SPRING
+
+ind <- (dataBucketS$month == "9") &
+           ((dataBucketS$obsHalfHour > as_hms("06:00:00") &  dataBucketS$obsHalfHour < as_hms("18:00:00"))) # See https://stackoverflow.com/questions/12459169/using-ifelse-to-remove-unwanted-rows-from-the-dataset-in-r :::: Total of twelve hours 
+
+dataBucketS <- dataBucketS[!ind, ]
+
+ind <- (dataBucketS$month == "10") &
+           ((dataBucketS$obsHalfHour > as_hms("06:00:00") &  dataBucketS$obsHalfHour < as_hms("18:00:00"))) # Total of twelve hours 
+
+dataBucketS <- dataBucketS[!ind, ]
+  
+ind <- (dataBucketS$month == "11") &
+           ((dataBucketS$obsHalfHour > as_hms("06:00:00") &  dataBucketS$obsHalfHour < as_hms("18:00:00"))) # ::: Total of twelve hours
+
+
+dataBucketS <- dataBucketS[!ind, ] #Only keep hours where no solar is generated
+
+dataBucketS <- dataBucketS[, season := NA]
+
+dataBucketS <- dataBucketS[, season := ifelse(dataBucketS$month=="12" | dataBucketS$month=="1" | dataBucketS$month=="2", "Summer", season)]
+dataBucketS <- dataBucketS[, season := ifelse(dataBucketS$month=="3" | dataBucketS$month=="4" | dataBucketS$month=="5", "Autumn", season)]
+dataBucketS <- dataBucketS[, season := ifelse(dataBucketS$month=="6" | dataBucketS$month=="7" | dataBucketS$month=="8", "Winter", season)]
+dataBucketS <- dataBucketS[, season := ifelse(dataBucketS$month=="9" | dataBucketS$month=="10" | dataBucketS$month=="11", "Spring", season)]
+
+
+
+```
+
+
+
+```{r naAnalysis}
+
+
+NAomitDT <- copy(dataBucketS)
+NAomitDT <- NAomitDT[, naKWH := sum(is.na(kWh)), keyby =. (date)] #Creates a variable showing NAs in kWh for date
+
+
+
+
+
+```
+
+```{r imputeData}
+
+
+NAomitDT <- NAomitDT[complete.cases(NAomitDT$dateTime), ] #Remove entries where no dateTime was recorded n=10,000
+# This is not too bad, let us remove rows where kWh is NA
+
+NAomitDT <- NAomitDT[!is.na(kWh)]
+
+#check
+sum(is.na(NAomitDT)) #no more NAs
+colSums(is.na(NAomitDT)) #check 
+
+#BUT maybe we need to impute missing values based on the mean?
+# Calculate sum of kWh for each day and iD BUT: How to make sure that every day 48 values are considered? Do we need to impute data so that we have 48 obs for each day? What if a day is missing for an iD? 
+
+
+
+
+
+
+
+
+```
+
+
+
+
+```{r exportDT}
+
+
+noSolarMeridianDT <- data.table::fwrite(NAomitDT,  "~/greenGridData/externalData//Meridian/2_Cleaned/noSolarMeridianAnnual.csv")
+
+#Export to server
+
+#Info
+#ReshapeDT: input DT
+#dataBucket: the same as ReshapeDT but with POSIXct dateTime with additional lubridate values
+#dataBucketS: Selected dates for years
+#NAomitDT: data clean without NAs but do we need to impute? Based on dataBucketS
+#noSolarMeridianDT: Export NAomitDT to server
+
+
+#WARNING No plot has been saved so far with 800 dpi
+```
+
+
+
+
+
+

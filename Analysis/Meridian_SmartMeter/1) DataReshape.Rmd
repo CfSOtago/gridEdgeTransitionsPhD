@@ -90,7 +90,7 @@ ReshapeDT <- ReshapeDT[, time:= ifelse(obsHalfHour=='HHPeriod_25', '12:00:00', t
 ReshapeDT <- ReshapeDT[, time:= ifelse(obsHalfHour=='HHPeriod_26', '12:30:00', time)]
 ReshapeDT <- ReshapeDT[, time:= ifelse(obsHalfHour=='HHPeriod_27', '13:00:00', time)]
 ReshapeDT <- ReshapeDT[, time:= ifelse(obsHalfHour=='HHPeriod_28', '13:30:00', time)]
-ReshapeDT <- ReshapeDT[, time:= ifelse(obsHalfHour=='HHPeriod_39', '14:00:00', time)]
+ReshapeDT <- ReshapeDT[, time:= ifelse(obsHalfHour=='HHPeriod_29', '14:00:00', time)]
 ReshapeDT <- ReshapeDT[, time:= ifelse(obsHalfHour=='HHPeriod_30', '14:30:00', time)]
 
 
@@ -113,6 +113,8 @@ ReshapeDT <- ReshapeDT[, time:= ifelse(obsHalfHour=='HHPeriod_45', '22:00:00', t
 ReshapeDT <- ReshapeDT[, time:= ifelse(obsHalfHour=='HHPeriod_46', '22:30:00', time)]
 ReshapeDT <- ReshapeDT[, time:= ifelse(obsHalfHour=='HHPeriod_47', '23:00:00', time)]
 ReshapeDT <- ReshapeDT[, time:= ifelse(obsHalfHour=='HHPeriod_48', '23:30:00', time)]
+#ReshapeDT <- ReshapeDT[, time:= ifelse(obsHalfHour=='HHPeriod_49', '24:00:00', time)]
+#ReshapeDT <- ReshapeDT[, time:= ifelse(obsHalfHour=='HHPeriod_50', '24:30:00', time)]
 
 LubridateDT <- copy(ReshapeDT)
 
