@@ -41,6 +41,8 @@ woRkflow::loadLibraries(reqLibs)
 
 dataDT = data.table::as.data.table(read_csv(file_in("~/greenGridData/externalData//Meridian/1_Reshape/finalReshape.csv"))) #Requires step 1: reshaping data from overhead folder
 
+dataDT <- dataDT[, kW:= kWh*2] # We want power instead of energy
+
 ```
 
 ```{r summary}
@@ -59,32 +61,15 @@ round(res, 2) #7.4% NA or 0
 
 ```{r boxplotKWh}
 
-myPlot <- ggplot2::ggplot(dataDT, aes(x= time, y=kWh, group=time)) +
+myPlot <- ggplot2::ggplot(dataDT, aes(x= time, y=kW, group=time)) +
   geom_boxplot(outlier.shape=NA) +
-   labs(x="Time of day",y="kWh",title="kWh distribution over the years and houses")+
+   labs(x="Time of day",y="Power (kW)",title="kW distribution over the years and houses")+
    ylim(-2.5,2.5)+
   theme(text = element_text(family = "Cambria"),
         axis.text.x = element_text(colour = "black"),
-        axis.ticks.x = element_line(colour = "black"))
-  # scale_x_time(breaks = scales::breaks_width("30 min"))
-
-myPlot
-
-
-```
-
-```{r preSolarBoxplot}
-
-pre <- dataDT[!(dataDT$SolarPeriod=="Post-Solar"),]
-
-
-myPlot <- ggplot2::ggplot(pre, aes(x= time, y=kWh, group=time)) +
-  geom_boxplot(outlier.shape=NA) +
-   labs(x="Time of day",y="kWh",title="kWh distribution post solar over the years and houses")+
-   ylim(-2.5,2.5)+
-  theme(text = element_text(family = "Cambria"),
-        axis.text.x = element_text(colour = "black"),
-        axis.ticks.x = element_line(colour = "black"))
+        axis.text.y = element_text(colour = "black"),
+        axis.ticks.x = element_line(colour = "black"),
+        axis.ticks.y = element_line(colour = "black"))
   # scale_x_time(breaks = scales::breaks_width("30 min"))
 
 myPlot
@@ -97,25 +82,114 @@ myPlot
 post <- dataDT[!(dataDT$SolarPeriod=="Pre-Solar"),]
 
 
-myPlot <- ggplot2::ggplot(post, aes(x= time, y=kWh, group=time)) +
+myPlot <- ggplot2::ggplot(post, aes(x= time, y=kW, group=time)) +
   geom_boxplot(outlier.shape=NA) +
-   labs(x="Time of day",y="kWh",title="kWh distribution pre solar over the years and houses")+
+   labs(x="Time of day",y="Power (kW)",title="kW distribution post solar over the years and houses")+
    ylim(-2.5,2.5)+
   theme(text = element_text(family = "Cambria"),
         axis.text.x = element_text(colour = "black"),
-        axis.ticks.x = element_line(colour = "black"))
+        axis.text.y = element_text(colour = "black"),
+        axis.ticks.x = element_line(colour = "black"),
+        axis.ticks.y = element_line(colour = "black"))
+  # scale_x_time(breaks = scales::breaks_width("30 min"))
+
+myPlot
+
+
+```
+
+```{r WhyPostValuesZeroAtNight}
+
+#Why post-installation values zero over night?
+
+postC <- copy(post)
+
+postC <- filter(postC, kW < 0, 
+                time >= as.hms("20:00:00") & time <= as.hms("24:00:00") |
+                time <= as.hms("08:00:00") & time >= as.hms("00:00:00"))
+
+tally(group_by(postC, iD)) # Negative values caused by 167 houses
+tally(group_by(postC, date)) # -> many dates are affected # MAny dates are affected
+
+
+myPlot <- ggplot2::ggplot(postC, aes(x=kW)) +
+  geom_histogram(binwidth = 0.5) +
+   labs(x="kW",y="nObs",title="Range of negative power values during non solar hours after solar installation")+
+ #  scale_fill_discrete(name = "Household iD")+
+  # ylim(-2.5,2.5)+
+  theme(text = element_text(family = "Cambria"),
+        axis.text.x = element_text(colour = "black"),
+        axis.text.y = element_text(colour = "black"),
+        axis.ticks.x = element_line(colour = "black"),
+        axis.ticks.y = element_line(colour = "black"))
+  # scale_x_time(breaks = scales::breaks_width("30 min"))
+
+myPlot
+
+
+
+```
+
+```{r preSolarBoxplot}
+
+pre <- dataDT[!(dataDT$SolarPeriod=="Post-Solar"),]
+
+
+myPlot <- ggplot2::ggplot(pre, aes(x= time, y=kW, group=time)) +
+  geom_boxplot(outlier.shape=NA) +
+   labs(x="Time of day",y="Power (kW)",title="kW distribution pre solar over the years and houses")+
+   ylim(-2.5,2.5)+
+  theme(text = element_text(family = "Cambria"),
+        axis.text.x = element_text(colour = "black"),
+        axis.text.y = element_text(colour = "black"),
+        axis.ticks.x = element_line(colour = "black"),
+        axis.ticks.y = element_line(colour = "black"))
   # scale_x_time(breaks = scales::breaks_width("30 min"))
 
 myPlot
 
 ```
 
+```{r WhyPreValuesSmallerZero}
 
+#Why are pre-installation values in the boxplot smaller than zero? Is it just one house?
+
+preC <- copy(pre)
+
+preC <- filter(preC, kW < 0)
+
+# How many houses had negative values pre installation?
+
+tally(group_by(preC, iD)) # -> Negative values caused by five houses 
+
+tally(group_by(preC, date)) # -> many dates are affected 
+
+# What is the range of negative values per household?
+
+myPlot <- ggplot2::ggplot(preC, aes(x=kW, fill = as.factor(iD))) +
+  geom_histogram(binwidth = 0.5) +
+   labs(x="kW",y="nObs",title="Range of negative power values before solar installation")+
+   scale_fill_discrete(name = "Household iD")+
+  # ylim(-2.5,2.5)+
+  theme(text = element_text(family = "Cambria"),
+        axis.text.x = element_text(colour = "black"),
+        axis.text.y = element_text(colour = "black"),
+        axis.ticks.x = element_line(colour = "black"),
+        axis.ticks.y = element_line(colour = "black"))
+  # scale_x_time(breaks = scales::breaks_width("30 min"))
+
+myPlot
+
+
+
+
+
+```
 
 
 ```{r whereNA}
 
-plotDT <- dataDT[is.na(kWh), .(nNA = .N), keyby = .(date, time)] # count the NAs by ID and date
+plotDT <- dataDT[is.na(kW), .(nNA = .N), keyby = .(date, time)] # count the NAs by ID and date
 
 ggplot(plotDT, aes(x = date, y = time, fill = nNA)) +
 geom_tile() +
@@ -134,7 +208,7 @@ tally(group_by(dataDT, iD))
 
 
 nObsDT <- dataDT
-nObsDT <- nObsDT[, nObs := ifelse(is.na(nObsDT$kWh), 0,1 )]
+nObsDT <- nObsDT[, nObs := ifelse(is.na(nObsDT$kW), 0,1 )]
 nObsDT <- nObsDT[, sumnObs:=sum(nObs), keyby =.(date)]
 
 
