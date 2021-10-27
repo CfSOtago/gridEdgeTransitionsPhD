@@ -268,7 +268,7 @@ LinkDT <- LinkDT[ind, ]
 preLink <- filter(LinkDT,  SolarPeriod == "Pre-Solar")
 
 preLink <- filter(preLink,  kW < 0)
-kW < 0 &
+
 
 
 
