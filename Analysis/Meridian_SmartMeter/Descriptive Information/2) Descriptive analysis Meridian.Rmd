@@ -271,9 +271,9 @@ preLink <- filter(preLink,  kW < 0)
 
 
 
-test
+TestDT <- copy(dataDT)
 
-
+TestDT <- lapply(list, unique(TestDT$iD))
 
 
 ```

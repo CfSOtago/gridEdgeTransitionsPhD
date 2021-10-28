@@ -127,7 +127,16 @@ LubridateDT <- LubridateDT[, year:= lubridate::year(date)]
 
 #Rename and delete double data
 LubridateDT <- LubridateDT[, Read_Date:=NULL]
-names(LubridateDT)[names(LubridateDT) == "Reference"] <- "iD"
+names(LubridateDT)[names(LubridateDT) == "Reference"] <- "iD_old"
+
+#Make the iDs beautiful
+
+iD_DT <- data.table::as.data.table(read_csv(file_in("~/greenGridData/externalData//Meridian/1_Reshape/iD.csv")))
+LubridateDT <- LubridateDT[, charID := as.character(iD_old)]
+
+setkey(iD_DT, charID)
+
+
 
 ```
 
