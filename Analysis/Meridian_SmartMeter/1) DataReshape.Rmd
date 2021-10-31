@@ -133,8 +133,19 @@ names(LubridateDT)[names(LubridateDT) == "Reference"] <- "iD_old"
 
 iD_DT <- data.table::as.data.table(read_csv(file_in("~/greenGridData/externalData//Meridian/1_Reshape/iD.csv")))
 LubridateDT <- LubridateDT[, charID := as.character(iD_old)]
+iD_DT <- iD_DT[, charID := as.character(origID)]
 
-setkey(iD_DT, charID)
+                           
+LinkDT <- merge(iD_DT, LubridateDT, by = "charID")
+LinkDT <- LinkDT[, charID:=NULL]
+LinkDT <- LinkDT[, origID:=NULL]
+LinkDT <- LinkDT[, iD_old:=NULL]
+
+
+
+
+
+
 
 
 
@@ -144,7 +155,7 @@ setkey(iD_DT, charID)
 ```{r csvExport}
 
 
-finalReshapeDT <- data.table::fwrite(LubridateDT,  "~/greenGridData/externalData//Meridian/1_Reshape/finalReshape.csv")
+finalReshapeDT <- data.table::fwrite(LinkDT,  "~/greenGridData/externalData//Meridian/1_Reshape/finalReshape.csv")
 
 #Export to server
 

@@ -233,35 +233,13 @@ myPlot
 #Any data processing has to be made before this code...
 # Extracting linked Meridian houses with interviews
 
-LinkDT <- copy(dataDT)
+
+InterviewDT <- subset(dataDT, iD %like% "int")
 
 
-ind <- ((LinkDT$iD == "0.587238533268508") |
-        (LinkDT$iD == "0.387089163525807") |
-        (LinkDT$iD == "0.456828643070452") |
-        (LinkDT$iD == "0.877576793180371") |
-        (LinkDT$iD == "0.171014874280388") |
-        (LinkDT$iD == "0.868322946452703") |
-        (LinkDT$iD == "0.41800962092733")  |
-        (LinkDT$iD == "0.628924464101736") |
-        (LinkDT$iD == "0.921145833904466") |
-        (LinkDT$iD == "0.788062624792568") |
-        (LinkDT$iD == "0.758354519414506") |
-        (LinkDT$iD == "0.728020456863507") |
-        (LinkDT$iD == "0.660658317445907") |
-        (LinkDT$iD == "0.998668778789795"))
+TestDT <- subset(dataDT, iD == "cd_105_int")
 
 
-#LinkDT <- LinkDT[, name:= NA]
-#LinkDT <- LinkDT[, name:= ifelse(LinkDT$iD=="0.587238533268508", "rf_1", LinkDT)]
-
-
-
-
-#Any data processing has to be made beofre this code...
-# Extracting linked Meridian houses with interviews
-
-LinkDT <- LinkDT[ind, ]
 
 # How many houses had negative values pre installation?
 
