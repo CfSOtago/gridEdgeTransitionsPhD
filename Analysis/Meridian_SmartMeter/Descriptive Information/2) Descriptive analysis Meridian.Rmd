@@ -228,33 +228,105 @@ myPlot
 
 ```
 
+````{r measurementError}
+
+# Objective: Look at the dates when post installation kW reaches zero overninght. Is this a battery or measurement error?
+
+postC <- copy(post)
+
+postC <- filter(postC, kW < 0, 
+                time >= as.hms("23:00:00") & time <= as.hms("24:00:00") |
+                time <= as.hms("05:00:00") & time >= as.hms("00:00:00"))
+
+
+tally(group_by(postC, iD)) # Negative values caused by 12 houses
+tally(group_by(postC, date)) # -> many dates are affected 
+
+select <- filter(postC, iD == "cd_79_int" )
+tally(group_by(select, date)) # -> many dates are affected 
+
+select <- filter(post, date == "2019-08-31", iD== "cd_79_int") # the day when it went zero overnight
+select2 <- filter(post, date == "2019-08-29", iD== "cd_79_int") # two days prior to this in comparison 
+
+#Plot this 
+
+myPlot <- ggplot2::ggplot(select2, aes(x= time, y=kW)) +
+  geom_line() +
+   labs(x="Time",y="Power (kW)",title="Battery or measurement error? 2019-08-29, cd_79_int")+
+  # ylim(-2.5,2.5)+
+  theme(text = element_text(family = "Cambria"),
+        axis.text.x = element_text(colour = "black"),
+        axis.ticks.x = element_line(colour = "black"))
+  # scale_x_time(breaks = scales::breaks_width("30 min"))
+
+myPlot
+
+
+````
+
+
+
+
 ```{r extractMeridianLink}
 
 #Any data processing has to be made before this code...
 # Extracting linked Meridian houses with interviews
 
 
-InterviewDT <- subset(dataDT, iD %like% "int")
-
-
-TestDT <- subset(dataDT, iD == "cd_105_int")
+InterviewDT <- subset(dataDT, iD %like% "int") #Works well
 
 
 
 # How many houses had negative values pre installation?
 
-preLink <- filter(LinkDT,  SolarPeriod == "Pre-Solar")
+#preLink <- filter(LinkDT,  SolarPeriod == "Pre-Solar")
 
-preLink <- filter(preLink,  kW < 0)
+#preLink <- filter(preLink,  kW < 0)
+
+```
+
+```{r OERCtalk}
+
+# Objective: How much does consumption from the grid decline after installing PV by house?
+# 1: Annual change 
+
+# Challenges: Need to make sure that pre-post has the same number of obs by iD (compare apples with apples)
+# What is the best way to visulaise this huge spread?
+
+nObsDT <- dataDT[, .(nObsPrePost = .N), keyby =.(iD, SolarPeriod)]
 
 
 
-TestDT <- copy(dataDT)
 
-TestDT <- lapply(list, unique(TestDT$iD))
+
+
+
+annualDT <- dataDT[, . (sumkWh = sum(kWh, na.rm = TRUE)), keyby =.(SolarPeriod, iD)]
+
+myPlot <- ggplot2::ggplot(annualDT, aes(x= iD, y=sumkWh)) +
+  geom_point() +
+   labs(x="Time",y="Power (kW)",title="Battery or measurement error? 2019-08-29, cd_79_int")+
+  # ylim(-2.5,2.5)+
+  theme(text = element_text(family = "Cambria"),
+        axis.text.x = element_text(colour = "black"),
+        axis.ticks.x = element_line(colour = "black"))
+  # scale_x_time(breaks = scales::breaks_width("30 min"))
+
+myPlot
+
+
+
+
+
+
+
+
+
+
 
 
 ```
+
 
 #Not relevant
 
