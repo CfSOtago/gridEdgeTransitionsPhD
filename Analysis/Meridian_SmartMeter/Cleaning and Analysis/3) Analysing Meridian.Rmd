@@ -1,0 +1,80 @@
+---
+title: "3) Analysing Meridian"
+author: "Carsten Dortans"
+date: "05/11/2021"
+output: html_document
+---
+
+#This document analysis Meridian smart meter data for descriprive information. 
+```{r reqlib}
+
+reqLibs <- c("data.table", # data munching
+             "drake", # what's done stays done
+             "here", # here
+             "lubridate", # dates and times
+             "ggplot2", # plots
+             "skimr", # for skim
+             "knitr", # for kable
+             "readr", # for .csv
+             "hms", # manipulate hms
+             "dplyr", # data munching
+             "kableExtra", # for tables
+             "visNetwork", # for drake's dependency graph
+             "callr", # for drake commands
+             "readxl",
+             "purrr", # for imprting files
+             "networkD3", # for more graphic elements
+             "ggraph",
+             "purrr", # for importing files
+             "zoo",
+             "tidyr",
+             "imputeTS",
+             "pastecs" #for descritive analyses,
+            # "esquisse" #interactive ggplot
+)
+# load them
+woRkflow::loadLibraries(reqLibs)
+
+```
+
+```{r loadData}
+
+dataDT = data.table::as.data.table(read_csv(file_in("~/greenGridData/externalData//Meridian/2_Cleaned/cleanedMeridian.csv"))) #Requires step 2: descriptive and cleaning
+
+dataDT <- dataDT[, obsHalfHour:= hms::as.hms(obsHalfHour)]
+dataDT <- dataDT[, time:= NULL]
+dataDT <- dataDT[, nObs:= NULL]
+dataDT <- dataDT[, sumnObs:= NULL]
+dataDT <- dataDT[, nObsPrePost:= NULL]
+dataDT <- dataDT[, richness:= NULL]
+
+```
+
+```{r OERC}
+
+
+
+
+
+
+
+
+
+
+
+```
+
+
+```{r extractMeridianLink}
+
+#Any data processing has to be made before this code...
+# Extracting linked Meridian houses with interviews
+
+
+#InterviewDT <- subset(dataDT, iD %like% "int") #Works well
+
+
+```
+
+
+
