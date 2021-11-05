@@ -29,6 +29,7 @@ reqLibs <- c("data.table", # data munching
              "zoo",
              "tidyr",
              "imputeTS",
+             "reshape",
              "pastecs" #for descritive analyses,
             # "esquisse" #interactive ggplot
 )
@@ -52,13 +53,64 @@ dataDT <- dataDT[, richness:= NULL]
 
 ```{r OERC}
 
+# Objective: How much does consumption from the grid decline after installing PV by house?
+# 1: Annual change 
+
+annualDT <- copy(dataDT)
+annualDT <- annualDT[, .(annualkWh = sum(kWh, na.rm = TRUE)), keyby =.(iD, SolarPeriod)]
+annualDT <- dcast(annualDT, `iD`~SolarPeriod) #It is time to seperate pre and post into one column for each
+
+#Display how pre solar annual consumption varies over the househol size
+
+myPlot <- ggplot2::ggplot(annualDT, aes(x=`Pre-Solar`)) +
+  geom_histogram(binwidth = 1000, colour="black", fill="lightblue") +
+   labs(x="Annual consumption pre installation (kWh)",y="Number of households",title="Range of annual consumption pre solar installation")+
+   scale_fill_discrete(name = "Household iD")+
+  geom_vline(aes(xintercept=mean(`Pre-Solar`)),
+            color="blue", linetype="solid", size=.5)+
+  # ylim(-2.5,2.5)+
+  theme(text = element_text(family = "Cambria"),
+        axis.text.x = element_text(colour = "black"),
+        axis.text.y = element_text(colour = "black"),
+        axis.ticks.x = element_line(colour = "black"),
+        axis.ticks.y = element_line(colour = "black"))
+  # scale_x_time(breaks = scales::breaks_width("30 min"))
+
+myPlot
 
 
+#Relative change in annual consumption
+annualDT <- annualDT[, change := (1-(`Post-Solar`/`Pre-Solar`))*100]
 
 
+myPlot <- ggplot2::ggplot(annualDT, aes(x=`change`)) +
+  geom_histogram(binwidth = 10, colour="black", fill="lightblue") +
+   labs(x="Decrease in consumption (%)",y="Number of households",title="Derease in consumption post solar installation relative to pre-solar annual kWh")+
+   scale_fill_discrete(name = "Household iD")+
+  # xlim(-2.5,2.5)+
+  theme(text = element_text(family = "Cambria"),
+        axis.text.x = element_text(colour = "black"),
+        axis.text.y = element_text(colour = "black"),
+        axis.ticks.x = element_line(colour = "black"),
+        axis.ticks.y = element_line(colour = "black"))
+  # scale_x_time(breaks = scales::breaks_width("30 min"))
 
+myPlot
 
-
+myPlot <- ggplot2::ggplot(annualDT, aes(x=`change`)) +
+  geom_histogram(binwidth = 10, colour="black", fill="lightblue") +
+  #geom_density(alpha=.2, fill="#FF6666") +
+   labs(x="Decrease in consumption (%)",y="Number of households",title="Derease in consumption post solar installation relative to pre-solar annual kWh")+
+   scale_fill_discrete(name = "Household iD")+
+  theme(text = element_text(family = "Cambria"),
+        axis.text.x = element_text(colour = "black"),
+        axis.text.y = element_text(colour = "black"),
+        axis.ticks.x = element_line(colour = "black"),
+        axis.ticks.y = element_line(colour = "black"))+
+   scale_x_continuous(breaks = c(-100, -50, 0, 50, 100, 150, 200), limits = c(-100, 200))+
+   geom_vline(aes(xintercept=mean(change)),
+            color="blue", linetype="solid", size=.5)
+myPlot
 
 
 

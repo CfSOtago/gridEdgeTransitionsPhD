@@ -304,7 +304,7 @@ nObsDT <- nObsDT[!iD %in% nObsDT[`iD` == "cd_68" , iD], ]
 nObsDT <- nObsDT[!iD %in% nObsDT[`iD` == "cd_79_int" , iD], ] 
 nObsDT <- nObsDT[!iD %in% nObsDT[`iD` == "cd_99" , iD], ] 
 nObsDT <- nObsDT[!iD %in% nObsDT[`iD` == "cd_69" , iD], ] 
-
+nObsDT <- nObsDT[!iD %in% nObsDT[`iD` == "cd_54" , iD], ] 
 # Export this cleaned data 
 
 
