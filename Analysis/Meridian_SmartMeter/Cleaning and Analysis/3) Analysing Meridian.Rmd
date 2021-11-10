@@ -48,6 +48,7 @@ dataDT <- dataDT[, nObs:= NULL]
 dataDT <- dataDT[, sumnObs:= NULL]
 dataDT <- dataDT[, nObsPrePost:= NULL]
 dataDT <- dataDT[, richness:= NULL]
+dataDT <- dataDT[, daysInMonth := days_in_month(date)]
 
 ```
 
@@ -82,14 +83,19 @@ myPlot <- ggplot2::ggplot(annualDT, aes(x=`Pre-Solar`)) +
 myPlot
 
 
+
+
+
 #Relative change in annual consumption
-annualDT <- annualDT[, change := (1-(`Post-Solar`/`Pre-Solar`))*100]
+#annualDT <- annualDT[, change := ((-`Post-Solar`/`Pre-Solar`)*100)]
+
+annualDT <- annualDT[, change := (((`Pre-Solar`- `Post-Solar`)/`Pre-Solar`)*100)*(-1)]
 annualDT <- annualDT[!iD %in% annualDT[is.na(change) , iD], ]
 
 
 myPlot <- ggplot2::ggplot(annualDT, aes(x=`change`)) +
   geom_histogram(binwidth = 10, colour="black", fill="lightblue") +
-   labs(x="Decrease in consumption (%)",y="Number of households",title="Decrease in consumption post solar installation relative to pre-solar annual kWh")+
+   labs(x="Change in consumption (%)",y="Number of households",title="Change in consumption post solar installation relative to pre-solar annual kWh")+
    scale_fill_discrete(name = "Household iD")+
   # xlim(-2.5,2.5)+
   theme(text = element_text(family = "Cambria"),
@@ -101,20 +107,50 @@ myPlot <- ggplot2::ggplot(annualDT, aes(x=`change`)) +
 
 myPlot
 
+
+
+
 myPlot <- ggplot2::ggplot(annualDT, aes(x=`change`)) +
   geom_histogram(binwidth = 10, colour="black", fill="lightblue") +
   #geom_density(alpha=.2, fill="#FF6666") +
-   labs(x="Decrease in consumption (%)",y="Number of households",title="Decrease in consumption post solar installation relative to pre-solar annual kWh +median")+
+   labs(x="Change in consumption (%)",y="Number of households",title="Change in consumption post solar installation relative to pre-solar annual kWh +median")+
    scale_fill_discrete(name = "Household iD")+
   theme(text = element_text(family = "Cambria"),
         axis.text.x = element_text(colour = "black"),
         axis.text.y = element_text(colour = "black"),
         axis.ticks.x = element_line(colour = "black"),
         axis.ticks.y = element_line(colour = "black"))+
-   scale_x_continuous(breaks = c(-100, -50, 0, 50, 100, 150, 200), limits = c(-100, 200))+
+   scale_x_continuous(breaks = c(-200, -150, -100, -50, 0, 50, 100, 150, 200, 250, 300), limits = c(-200, 300))+
    geom_vline(aes(xintercept=median(change)),
             color="blue", linetype="solid", size=.5)
 myPlot
+
+
+#Absolute values of change
+annualDT <- annualDT[, absChange := (`Pre-Solar` - `Post-Solar`)*(-1)]
+
+
+
+myPlot <- ggplot2::ggplot(annualDT, aes(x=`absChange`)) +
+  geom_histogram(binwidth = 1000, colour="black", fill="lightblue") +
+  #geom_density(alpha=.2, fill="#FF6666") +
+   labs(x="Change in consumption (kWh)",y="Number of households",title="Change in consumption post solar installation relative to pre-solar annual kWh +median")+
+   scale_fill_discrete(name = "Household iD")+
+  theme(text = element_text(family = "Cambria"),
+        axis.text.x = element_text(colour = "black"),
+        axis.text.y = element_text(colour = "black"),
+        axis.ticks.x = element_line(colour = "black"),
+        axis.ticks.y = element_line(colour = "black"))+
+  scale_x_continuous(breaks = c(-20000, -10000, 0, 10000, 20000), limits = c(-20000, 20000))+
+   geom_vline(aes(xintercept=median(absChange)),
+            color="blue", linetype="solid", size=.5)
+myPlot
+
+
+#10kW * 12hr/day *365= 48,800kWh. Anything larger than that is more tahn a household connection.
+# On this basis let us exclude cd_44 in the data processing rmd
+
+
 
 
 ```
@@ -126,7 +162,7 @@ monthlyDT <- monthlyDT[, .(monthlykWh = sum(kWh, na.rm = TRUE)), keyby =.(iD, So
 monthlyDT <- dcast(monthlyDT, `iD`+ month~SolarPeriod) #It is time to seperate pre and post into one column for each
 
 #Relative change in monthly consumption
-monthlyDT <- monthlyDT[, change := ((1-(`Post-Solar`/`Pre-Solar`))*100)] 
+monthlyDT <- monthlyDT[, change :=  (((`Pre-Solar`- `Post-Solar`)/`Pre-Solar`)*100)*(-1)]
 monthlyDT <- monthlyDT[!iD %in% monthlyDT[`Pre-Solar` <= 0 , iD], ] #Making sure the data is somewhat right
 monthlyDT <- monthlyDT[!iD %in% monthlyDT[`Post-Solar` == 0 , iD], ]
 monthlyDT <- monthlyDT[!iD %in% monthlyDT[is.na(change) , iD], ]
@@ -139,16 +175,16 @@ mu <- mu[, .(grp.median= median(`change`)), keyby =.(month)] #Creating a variabl
 
 
 myPlot <- ggplot2::ggplot(monthlyDT, aes(x=`change`)) +
-  geom_histogram(binwidth = 10, colour="black", fill="lightblue") +
+  geom_histogram( binwidth = 10,colour="black", fill="lightblue") +
   facet_wrap(vars(month))+
-   labs(x="Decrease in consumption (%)",y="Number of households",title="Decrease in consumption post solar installation relative to pre-solar monthly kWh, median dashed")+
+   labs(x="Change in consumption (%)",y="Number of households",title="Change in consumption post solar installation relative to pre-solar monthly kWh, median dashed")+
    scale_fill_discrete(name = "Household iD")+
   theme(text = element_text(family = "Cambria"),
         axis.text.x = element_text(colour = "black"),
         axis.text.y = element_text(colour = "black"),
         axis.ticks.x = element_line(colour = "black"),
         axis.ticks.y = element_line(colour = "black"))+
-   scale_x_continuous(breaks = c(-100, -50, 0, 50, 100, 150, 200), limits = c(-100, 200))+
+   scale_x_continuous(breaks = c(-300, -250, -200, -150, -100, -50, 0, 50, 100, 150, 200, 300), limits = c(-200, 200))+
    geom_vline(data=mu, aes(xintercept=grp.median),
                color="blue", linetype="solid", size=.5)
    
@@ -159,7 +195,7 @@ myPlot
 
 myPlot <- ggplot2::ggplot(mu, aes(x=`month`, y=`grp.median`)) +
   geom_bar(stat='identity', colour="black", fill="lightblue") +
-   labs(x="Month",y="Decrease in consumption (%)",title="Decrease in consumption post solar installation relative to pre-solar monthly kWh, median")+
+   labs(x="Month",y="Change in consumption (%)",title="Change in consumption post solar installation relative to pre-solar monthly kWh, median")+
    #scale_fill_discrete(name = "Household iD")+
   theme(text = element_text(family = "Cambria"),
         axis.text.x = element_text(colour = "black"),
@@ -187,7 +223,7 @@ monthlyDT <- monthlyDT[, .(monthlykWh = sum(kWh, na.rm = TRUE)), keyby =.(iD, So
 monthlyDT <- dcast(monthlyDT, `iD`+ month~SolarPeriod) #It is time to seperate pre and post into one column for each
 
 #Relative change in monthly consumption
-monthlyDT <- monthlyDT[, change := ((1-(`Post-Solar`/`Pre-Solar`))*100)] 
+monthlyDT <- monthlyDT[, change := (((`Pre-Solar`- `Post-Solar`)/`Pre-Solar`)*100)*(-1)]
 monthlyDT <- monthlyDT[!iD %in% monthlyDT[`Pre-Solar` <= 0 , iD], ] #Making sure the data is somewhat right
 monthlyDT <- monthlyDT[!iD %in% monthlyDT[`Post-Solar` == 0 , iD], ]
 monthlyDT <- monthlyDT[!iD %in% monthlyDT[is.na(change) , iD], ]
@@ -199,7 +235,7 @@ mu <- mu[, .(grp.median= median(`change`)), keyby =.(month)] #Creating a variabl
 
 myPlot <- ggplot2::ggplot(mu, aes(x=`month`, y=`grp.median`)) +
   geom_bar(stat='identity', colour="black", fill="lightblue") +
-   labs(x="Month",y="Decrease in consumption (%)",title="Decrease in consumption post solar installation relative to pre-solar monthly kWh outside solar hours, median")+
+   labs(x="Month",y="Change in consumption (%)",title="Change in consumption post solar installation relative to pre-solar monthly kWh outside solar hours, median")+
    #scale_fill_discrete(name = "Household iD")+
   theme(text = element_text(family = "Cambria"),
         axis.text.x = element_text(colour = "black"),
@@ -226,7 +262,7 @@ monthlyDT <- monthlyDT[, .(monthlykWh = sum(kWh, na.rm = TRUE)), keyby =.(iD, So
 monthlyDT <- dcast(monthlyDT, `iD`+ month~SolarPeriod) #It is time to seperate pre and post into one column for each
 
 #Relative change in monthly consumption
-monthlyDT <- monthlyDT[, change := ((1-(`Post-Solar`/`Pre-Solar`))*100)] 
+monthlyDT <- monthlyDT[, change := (((`Pre-Solar`- `Post-Solar`)/`Pre-Solar`)*100)*(-1)]
 monthlyDT <- monthlyDT[!iD %in% monthlyDT[`Pre-Solar` <= 0 , iD], ] #Making sure the data is somewhat right
 monthlyDT <- monthlyDT[!iD %in% monthlyDT[`Post-Solar` == 0 , iD], ]
 monthlyDT <- monthlyDT[!iD %in% monthlyDT[is.na(change) , iD], ]
@@ -238,7 +274,7 @@ mu <- mu[, .(grp.median= median(`change`)), keyby =.(month)] #Creating a variabl
 
 myPlot <- ggplot2::ggplot(mu, aes(x=`month`, y=`grp.median`)) +
   geom_bar(stat='identity', colour="black", fill="lightblue") +
-   labs(x="Month",y="Decrease in consumption (%)",title="Decrease in consumption post solar installation relative to pre-solar monthly kWh inside solar hours, median")+
+   labs(x="Month",y="Change in consumption (%)",title="Change in consumption post solar installation relative to pre-solar monthly kWh inside solar hours, median")+
    #scale_fill_discrete(name = "Household iD")+
   theme(text = element_text(family = "Cambria"),
         axis.text.x = element_text(colour = "black"),
@@ -259,13 +295,15 @@ myPlot
 
 hourlyDT <- copy(dataDT)
 
-hourlyDT <- hourlyDT[, .(HhkWh = sum(kWh, na.rm = TRUE)), keyby =.(iD, SolarPeriod, month, obsHalfHour)]
+hourlyDT <- hourlyDT[, HhkWh := kWh/daysInMonth]
+hourlyDT <- hourlyDT[, .(HhkWh = sum(HhkWh, na.rm = TRUE)), keyby =.(iD, SolarPeriod, month, obsHalfHour)]
 
 
-hourlyDT <- dcast(hourlyDT, `iD`+ month + obsHalfHour~SolarPeriod) #It is time to seperate pre and post into one column for each
+hourlyDT <- dcast(hourlyDT,  `iD`+ month + obsHalfHour~SolarPeriod) #It is time to seperate pre and post into one column for each
+
 
 #Relative change in half hourly consumption
-hourlyDT <- hourlyDT[, change := ((1-(`Post-Solar`/`Pre-Solar`))*100)] 
+hourlyDT <- hourlyDT[, change := (((`Pre-Solar`- `Post-Solar`)/`Pre-Solar`)*100)*(-1)]
 hourlyDT <- hourlyDT[!iD %in% hourlyDT[`Pre-Solar` <= 0 , iD], ] #Making sure the data is somewhat right
 hourlyDT <- hourlyDT[!iD %in% hourlyDT[`Post-Solar` == 0 , iD], ]
 hourlyDT <- hourlyDT[!iD %in% hourlyDT[is.na(change) , iD], ]
@@ -282,7 +320,7 @@ mu <- filter(mu,
 myPlot <- ggplot2::ggplot(mu, aes(x=`obsHalfHour`, y=`medianChange`)) +
   facet_wrap(vars(month))+
   geom_bar(stat='identity', colour="black", fill="lightblue") +
-   labs(x="Time of day",y="Decrease in consumption (%)",title="Decrease in consumption post solar installation relative to pre-solar half hourly kWh for Jan & July, median")+
+   labs(x="Time of day",y="Change in consumption (%)",title="Change in consumption post solar installation relative to pre-solar half hourly kWh for Jan & July, median")+
    #scale_fill_discrete(name = "Household iD")+
   theme(text = element_text(family = "Cambria"),
         axis.text.x = element_text(colour = "black"),
@@ -321,8 +359,8 @@ myPlot <- ggplot2::ggplot(muSummer, aes(x=`obsHalfHour`, y=`medianChange`)) +
   #facet_wrap(vars(month))+
   geom_bar(stat='identity', colour="black", fill="lightblue") +
   geom_point(data = id, aes(x=`obsHalfHour`, y= `medianChange`))+
-  ylim(-100,600)+
-   labs(x="Time of day",y="Decrease in consumption (%)",title="Decrease in consumption post solar installation relative to pre-solar half hourly kWh for Jan, median + int")+
+  #ylim(-100,600)+
+   labs(x="Time of day",y="Change in consumption (%)",title="Change in consumption post solar installation relative to pre-solar half hourly kWh for Jan, median + int")+
    #scale_fill_discrete(name = "Household iD")+
   theme(text = element_text(family = "Cambria"),
         axis.text.x = element_text(colour = "black"),
@@ -339,8 +377,8 @@ myPlot <- ggplot2::ggplot(muSummer, aes(x=`obsHalfHour`, y=`medianChange`)) +
   #facet_wrap(vars(month))+
   geom_bar(stat='identity', colour="black", fill="lightblue") +
   geom_line(data = id, aes(x=`obsHalfHour`, y= `medianChange`, colour=iD))+
-  ylim(-100,600)+
-   labs(x="Time of day",y="Decrease in consumption (%)",title="Decrease in consumption post solar installation relative to pre-solar half hourly kWh for Jan, median + int")+
+  #ylim(-100,600)+
+   labs(x="Time of day",y="Change in consumption (%)",title="Change in consumption post solar installation relative to pre-solar half hourly kWh for Jan, median + int")+
    #scale_fill_discrete(name = "Household iD")+
   theme(text = element_text(family = "Cambria"),
         axis.text.x = element_text(colour = "black"),
@@ -377,8 +415,114 @@ myPlot <- ggplot2::ggplot(id, aes(x=`obsHalfHour`, y=`medianChange`)) +
   geom_line(aes( y= `medianChange1`, colour = "cd_x1_int"), size=1.5)+
   geom_line(aes( y= `medianChange2`, colour = "cd_x2_int"), size=1.5)+
   geom_line(aes( y= `medianChange3`, colour = "cd_x3_int"), size=1.5)+
-  ylim(-100,600)+
-   labs(x="Time of day",y="Decrease in consumption (%)",title="Decrease in consumption post solar installation relative to pre-solar half hourly kWh for Jan, median + int", color = "iD")+
+#  ylim(-100,600)+
+   labs(x="Time of day",y="Change in consumption (%)",title="Change in consumption post solar installation relative to pre-solar half hourly kWh for Jan, median + int", color = "iD")+
+  scale_color_manual(values = colors)+
+   #scale_fill_discrete(name = "Household iD")+
+  theme(text = element_text(family = "Cambria"),
+        axis.text.x = element_text(colour = "black"),
+        axis.text.y = element_text(colour = "black"),
+        axis.ticks.x = element_line(colour = "black"),
+        axis.ticks.y = element_line(colour = "black"))
+   #scale_x_continuous(breaks = c(1,2,3,4,5,6,7,8,9,10,11,12))
+
+myPlot
+
+
+#Now let us have a look at absolute medians and pre/post actual consumption 
+
+#1) Absolute Median
+
+absoluteDT <- copy(hourlyDT)
+absoluteDT <- absoluteDT[, absChangekWh := ((`Pre-Solar` - `Post-Solar`)*(-1))]
+absoluteDT <- absoluteDT[, . (absChangeMediankWh = median(absChangekWh)), keyby =.(month, obsHalfHour)]
+
+muSummer <- copy(absoluteDT)
+
+muSummer <- filter(muSummer, 
+             month == 1)
+
+absoluteDT <- copy(hourlyDT)
+absoluteDT <- absoluteDT[, absChangekWh := ((`Pre-Solar` - `Post-Solar`)*(-1))]
+
+id1 <-filter(absoluteDT, 
+             iD == "cd_46_int",
+             month == 1)
+
+id2 <- filter(absoluteDT, 
+             iD == "cd_171_int",
+             month == 1)
+
+
+id3 <- filter(absoluteDT, 
+             iD == "cd_97_int",
+             month == 1)
+
+
+muSummer <- muSummer[, x1Pre:= id1$`Pre-Solar`]
+muSummer <- muSummer[, x1Post:= id1$`Post-Solar`]
+muSummer <- muSummer[, x1absChange:= ((`x1Pre` - `x1Post`)*(-1)) ]
+
+muSummer <- muSummer[, x2Pre:= id2$`Pre-Solar`]
+muSummer <- muSummer[, x2Post:= id2$`Post-Solar`]
+muSummer <- muSummer[, x2absChange:= ((`x2Pre` - `x2Post`)*(-1)) ]
+
+muSummer <- muSummer[, x3Pre:= id3$`Pre-Solar`]
+muSummer <- muSummer[, x3Post:= id3$`Post-Solar`]
+muSummer <- muSummer[, x3absChange:= ((`x3Pre` - `x3Post`)*(-1)) ]
+
+medianPre <- copy(hourlyDT)
+medianPre <- medianPre[, . (medianPre = median(`Pre-Solar`)), keyby =.(month, obsHalfHour)]
+medianPre <- filter(medianPre, 
+             month == 1)
+
+medianPost <- copy(hourlyDT)
+medianPost <- medianPost[, . (medianPost = median(`Post-Solar`)), keyby =.(month, obsHalfHour)]
+medianPost <- filter(medianPost, 
+             month == 1)
+
+muSummer <- muSummer[, medianPre := medianPre$medianPre]
+muSummer <- muSummer[, medianPost := medianPost$medianPost]
+
+
+
+# Median consumption pre solar for January
+
+colors <- c("cd_all" = "black", "cd_x1_int" = "blue", "cd_x2_int" = "red", "cd_x3_int" = "orange")
+
+
+
+myPlot <- ggplot2::ggplot(muSummer, aes(x=`obsHalfHour`)) +
+  #facet_wrap(vars(month))+
+  geom_line(aes(y=`medianPre`, colour = "cd_all"), size =2)+
+  geom_line(aes( y= `x1Pre`, colour = "cd_x1_int"), size=1)+
+  geom_line(aes( y= `x2Pre`, colour = "cd_x2_int"), size=1)+
+  geom_line(aes( y= `x3Pre`, colour = "cd_x3_int"), size=1)+
+#  ylim(-100,600)+
+   labs(x="Time of day",y="Consumption (kWh)",title="Median pre-solar half hourly kWh for Jan,  + int", color = "iD")+
+  scale_color_manual(values = colors)+
+   #scale_fill_discrete(name = "Household iD")+
+  theme(text = element_text(family = "Cambria"),
+        axis.text.x = element_text(colour = "black"),
+        axis.text.y = element_text(colour = "black"),
+        axis.ticks.x = element_line(colour = "black"),
+        axis.ticks.y = element_line(colour = "black"))
+   #scale_x_continuous(breaks = c(1,2,3,4,5,6,7,8,9,10,11,12))
+
+myPlot
+
+
+# Median consumption post solar for January
+
+
+myPlot <- ggplot2::ggplot(muSummer, aes(x=`obsHalfHour`)) +
+  #facet_wrap(vars(month))+
+  geom_line(aes(y=`medianPost`, colour = "cd_all"), size =2)+
+  geom_line(aes( y= `x1Post`, colour = "cd_x1_int"), size=1)+
+  geom_line(aes( y= `x2Post`, colour = "cd_x2_int"), size=1)+
+  geom_line(aes( y= `x3Post`, colour = "cd_x3_int"), size=1)+
+#  ylim(-100,600)+
+   labs(x="Time of day",y="Consumption (kWh)",title="Median post-solar half hourly kWh for Jan,  + int", color = "iD")+
   scale_color_manual(values = colors)+
    #scale_fill_discrete(name = "Household iD")+
   theme(text = element_text(family = "Cambria"),
@@ -392,6 +536,33 @@ myPlot
 
 
 
+# Median change  for January
+
+
+myPlot <- ggplot2::ggplot(muSummer, aes(x=`obsHalfHour`)) +
+  #facet_wrap(vars(month))+
+  geom_line(aes(y=`absChangeMediankWh`, colour = "cd_all"), size =2) +
+  geom_line(aes( y= `x1absChange`, colour = "cd_x1_int"), size=1)+
+  geom_line(aes( y= `x2absChange`, colour = "cd_x2_int"), size=1)+
+  geom_line(aes( y= `x3absChange`, colour = "cd_x3_int"), size=1)+
+#  ylim(-100,600)+
+   labs(x="Time of day",y="Change (kWh)",title="Median change half hourly kWh for Jan,  + int", color = "iD")+
+  scale_color_manual(values = colors)+
+   #scale_fill_discrete(name = "Household iD")+
+  theme(text = element_text(family = "Cambria"),
+        axis.text.x = element_text(colour = "black"),
+        axis.text.y = element_text(colour = "black"),
+        axis.ticks.x = element_line(colour = "black"),
+        axis.ticks.y = element_line(colour = "black"))
+   #scale_x_continuous(breaks = c(1,2,3,4,5,6,7,8,9,10,11,12))
+
+myPlot
+
+
+
+
+
+
 ```
 
 
@@ -402,13 +573,14 @@ myPlot
 
 hourlyDT <- copy(dataDT)
 
-hourlyDT <- hourlyDT[, .(HhkWh = sum(kWh, na.rm = TRUE)), keyby =.(iD, SolarPeriod, month, obsHalfHour)]
+hourlyDT <- hourlyDT[, HhkWh := kWh/daysInMonth]
+hourlyDT <- hourlyDT[, .(HhkWh = sum(HhkWh, na.rm = TRUE)), keyby =.(iD, SolarPeriod, month, obsHalfHour)]
 
 
-hourlyDT <- dcast(hourlyDT, `iD`+ month + obsHalfHour~SolarPeriod) #It is time to seperate pre and post into one column for each
+hourlyDT <- dcast(hourlyDT,  `iD`+ month + obsHalfHour~SolarPeriod) #It is time to seperate pre and post into one column for each
 
 #Relative change in half hourly consumption
-hourlyDT <- hourlyDT[, change := ((1-(`Post-Solar`/`Pre-Solar`))*100)] 
+hourlyDT <- hourlyDT[, change := (((`Pre-Solar`- `Post-Solar`)/`Pre-Solar`)*100)*(-1)]
 hourlyDT <- hourlyDT[!iD %in% hourlyDT[`Pre-Solar` <= 0 , iD], ] #Making sure the data is somewhat right
 hourlyDT <- hourlyDT[!iD %in% hourlyDT[`Post-Solar` == 0 , iD], ]
 hourlyDT <- hourlyDT[!iD %in% hourlyDT[is.na(change) , iD], ]
@@ -449,8 +621,8 @@ myPlot <- ggplot2::ggplot(muWinter, aes(x=`obsHalfHour`, y=`medianChange`)) +
   #facet_wrap(vars(month))+
   geom_bar(stat='identity', colour="black", fill="lightblue") +
   geom_point(data = id, aes(x=`obsHalfHour`, y= `medianChange`))+
-  ylim(-100,400)+
-   labs(x="Time of day",y="Decrease in consumption (%)",title="Decrease in consumption post solar installation relative to pre-solar half hourly kWh for July, median + int")+
+ # ylim(-100,400)+
+   labs(x="Time of day",y="Change in consumption (%)",title="Change in consumption post solar installation relative to pre-solar half hourly kWh for July, median + int")+
    #scale_fill_discrete(name = "Household iD")+
   theme(text = element_text(family = "Cambria"),
         axis.text.x = element_text(colour = "black"),
@@ -467,8 +639,8 @@ myPlot <- ggplot2::ggplot(muWinter, aes(x=`obsHalfHour`, y=`medianChange`)) +
   #facet_wrap(vars(month))+
   geom_bar(stat='identity', colour="black", fill="lightblue") +
   geom_line(data = id, aes(x=`obsHalfHour`, y= `medianChange`, colour=iD))+
-  ylim(-100,400)+
-   labs(x="Time of day",y="Decrease in consumption (%)",title="Decrease in consumption post solar installation relative to pre-solar half hourly kWh for July, median + int")+
+  #ylim(-100,400)+
+   labs(x="Time of day",y="Change in consumption (%)",title="Change in consumption post solar installation relative to pre-solar half hourly kWh for July, median + int")+
    #scale_fill_discrete(name = "Household iD")+
   theme(text = element_text(family = "Cambria"),
         axis.text.x = element_text(colour = "black"),
@@ -485,11 +657,13 @@ myPlot
 
 # Now reduce to a single data table
 
-id <- id[, .(medianChange = median(medianChange)), keyby =.(obsHalfHour)]
+idNew <- copy(muWinter)
 
-id <- id[, medianChange1:= id1$medianChange ]
-id <- id[, medianChange2:= id2$medianChange ]
-id <- id[, medianChange3:= id3$medianChange ]
+#id <- id[, medianChange := muWinter$medianChange]
+
+idNew <- idNew[, medianChange1:= id1$medianChange ]
+idNew <- idNew[, medianChange2:= id2$medianChange ]
+idNew <- idNew[, medianChange3:= id3$medianChange ]
 
 
 
@@ -499,14 +673,14 @@ colors <- c("cd_x1_int" = "blue", "cd_x2_int" = "red", "cd_x3_int" = "orange")
 
 
 
-myPlot <- ggplot2::ggplot(id, aes(x=`obsHalfHour`, y=`medianChange`)) +
+myPlot <- ggplot2::ggplot(idNew, aes(x=`obsHalfHour`, y=`medianChange`)) +
   #facet_wrap(vars(month))+
   geom_bar(stat='identity', colour="black", fill="lightblue") +
   geom_line(aes( y= `medianChange1`, colour = "cd_x1_int"), size=1.5)+
   geom_line(aes( y= `medianChange2`, colour = "cd_x2_int"), size=1.5)+
   geom_line(aes( y= `medianChange3`, colour = "cd_x3_int"), size=1.5)+
-  ylim(-100,300)+
-   labs(x="Time of day",y="Decrease in consumption (%)",title="Decrease in consumption post solar installation relative to pre-solar half hourly kWh for July, median + int", color = "iD")+
+ # ylim(-100,300)+
+   labs(x="Time of day",y="Change in consumption (%)",title="Change in consumption post solar installation relative to pre-solar half hourly kWh for July, median + int", color = "iD")+
   scale_color_manual(values = colors)+
    #scale_fill_discrete(name = "Household iD")+
   theme(text = element_text(family = "Cambria"),
@@ -517,6 +691,158 @@ myPlot <- ggplot2::ggplot(id, aes(x=`obsHalfHour`, y=`medianChange`)) +
    #scale_x_continuous(breaks = c(1,2,3,4,5,6,7,8,9,10,11,12))
 
 myPlot
+
+
+
+#Calculate the same plots for winter too....
+
+#Now let us have a look at absolute medians and pre/post actual consumption 
+
+#1) Absolute Median
+
+absoluteDT <- copy(hourlyDT)
+absoluteDT <- absoluteDT[, absChangekWh := ((`Pre-Solar` - `Post-Solar`)*(-1))]
+absoluteDT <- absoluteDT[, . (absChangeMediankWh = median(absChangekWh)), keyby =.(month, obsHalfHour)]
+
+muWinter <- copy(absoluteDT)
+
+muWinter <- filter(muWinter, 
+             month == 7)
+
+absoluteDT <- copy(hourlyDT)
+absoluteDT <- absoluteDT[, absChangekWh := ((`Pre-Solar` - `Post-Solar`)*(-1))]
+
+id1 <-filter(absoluteDT, 
+             iD == "cd_46_int",
+             month == 7)
+
+id2 <- filter(absoluteDT, 
+             iD == "cd_171_int",
+             month == 7)
+
+
+id3 <- filter(absoluteDT, 
+             iD == "cd_97_int",
+             month == 7)
+
+
+muWinter <- muWinter[, x1Pre:= id1$`Pre-Solar`]
+muWinter <- muWinter[, x1Post:= id1$`Post-Solar`]
+muWinter <- muWinter[, x1absChange:= ((`x1Pre` - `x1Post`)*(-1)) ]
+
+muWinter <- muWinter[, x2Pre:= id2$`Pre-Solar`]
+muWinter <- muWinter[, x2Post:= id2$`Post-Solar`]
+muWinter <- muWinter[, x2absChange:= ((`x2Pre` - `x2Post`)*(-1)) ]
+
+muWinter <- muWinter[, x3Pre:= id3$`Pre-Solar`]
+muWinter <- muWinter[, x3Post:= id3$`Post-Solar`]
+muWinter <- muWinter[, x3absChange:= ((`x3Pre` - `x3Post`)*(-1)) ]
+
+medianPre <- copy(hourlyDT)
+medianPre <- medianPre[, . (medianPre = median(`Pre-Solar`)), keyby =.(month, obsHalfHour)]
+medianPre <- filter(medianPre, 
+             month == 7)
+
+medianPost <- copy(hourlyDT)
+medianPost <- medianPost[, . (medianPost = median(`Post-Solar`)), keyby =.(month, obsHalfHour)]
+medianPost <- filter(medianPost, 
+             month == 7)
+
+muWinter <- muWinter[, medianPre := medianPre$medianPre]
+muWinter <- muWinter[, medianPost := medianPost$medianPost]
+
+
+
+# Median consumption pre solar for January
+
+colors <- c("cd_all" = "black", "cd_x1_int" = "blue", "cd_x2_int" = "red", "cd_x3_int" = "orange")
+
+
+
+myPlot <- ggplot2::ggplot(muWinter, aes(x=`obsHalfHour`)) +
+  #facet_wrap(vars(month))+
+  geom_line(aes(y=`medianPre`, colour = "cd_all"), size =2)+
+  geom_line(aes( y= `x1Pre`, colour = "cd_x1_int"), size=1)+
+  geom_line(aes( y= `x2Pre`, colour = "cd_x2_int"), size=1)+
+  geom_line(aes( y= `x3Pre`, colour = "cd_x3_int"), size=1)+
+#  ylim(-100,600)+
+   labs(x="Time of day",y="Consumption (kWh)",title="Median pre-solar half hourly kWh for July,  + int", color = "iD")+
+  scale_color_manual(values = colors)+
+   #scale_fill_discrete(name = "Household iD")+
+  theme(text = element_text(family = "Cambria"),
+        axis.text.x = element_text(colour = "black"),
+        axis.text.y = element_text(colour = "black"),
+        axis.ticks.x = element_line(colour = "black"),
+        axis.ticks.y = element_line(colour = "black"))
+   #scale_x_continuous(breaks = c(1,2,3,4,5,6,7,8,9,10,11,12))
+
+myPlot
+
+
+# Median consumption post solar for January
+
+
+myPlot <- ggplot2::ggplot(muWinter, aes(x=`obsHalfHour`)) +
+  #facet_wrap(vars(month))+
+  geom_line(aes(y=`medianPost`, colour = "cd_all"), size =2)+
+  geom_line(aes( y= `x1Post`, colour = "cd_x1_int"), size=1)+
+  geom_line(aes( y= `x2Post`, colour = "cd_x2_int"), size=1)+
+  geom_line(aes( y= `x3Post`, colour = "cd_x3_int"), size=1)+
+#  ylim(-100,600)+
+   labs(x="Time of day",y="Consumption (kWh)",title="Median post-solar half hourly kWh for July,  + int", color = "iD")+
+  scale_color_manual(values = colors)+
+   #scale_fill_discrete(name = "Household iD")+
+  theme(text = element_text(family = "Cambria"),
+        axis.text.x = element_text(colour = "black"),
+        axis.text.y = element_text(colour = "black"),
+        axis.ticks.x = element_line(colour = "black"),
+        axis.ticks.y = element_line(colour = "black"))
+   #scale_x_continuous(breaks = c(1,2,3,4,5,6,7,8,9,10,11,12))
+
+myPlot
+
+
+
+# Median change  for January
+
+
+myPlot <- ggplot2::ggplot(muWinter, aes(x=`obsHalfHour`)) +
+  #facet_wrap(vars(month))+
+  geom_line(aes(y=`absChangeMediankWh`, colour = "cd_all"), size =2) +
+  geom_line(aes( y= `x1absChange`, colour = "cd_x1_int"), size=1)+
+  geom_line(aes( y= `x2absChange`, colour = "cd_x2_int"), size=1)+
+  geom_line(aes( y= `x3absChange`, colour = "cd_x3_int"), size=1)+
+#  ylim(-100,600)+
+   labs(x="Time of day",y="Change (kWh)",title="Median change half hourly kWh for July,  + int", color = "iD")+
+  scale_color_manual(values = colors)+
+   #scale_fill_discrete(name = "Household iD")+
+  theme(text = element_text(family = "Cambria"),
+        axis.text.x = element_text(colour = "black"),
+        axis.text.y = element_text(colour = "black"),
+        axis.ticks.x = element_line(colour = "black"),
+        axis.ticks.y = element_line(colour = "black"))
+   #scale_x_continuous(breaks = c(1,2,3,4,5,6,7,8,9,10,11,12))
+
+myPlot
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ```
 

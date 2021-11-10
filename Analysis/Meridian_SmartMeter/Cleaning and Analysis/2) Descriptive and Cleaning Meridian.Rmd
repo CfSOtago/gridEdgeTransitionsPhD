@@ -305,7 +305,12 @@ nObsDT <- nObsDT[!iD %in% nObsDT[`iD` == "cd_79_int" , iD], ]
 nObsDT <- nObsDT[!iD %in% nObsDT[`iD` == "cd_99" , iD], ] 
 nObsDT <- nObsDT[!iD %in% nObsDT[`iD` == "cd_69" , iD], ] 
 nObsDT <- nObsDT[!iD %in% nObsDT[`iD` == "cd_54" , iD], ] 
+
+#Another weird house using more than 48,800kWh per year.
+
+nObsDT <- nObsDT[!iD %in% nObsDT[`iD` == "cd_44" , iD], ] 
 # Export this cleaned data 
+
 
 
 
