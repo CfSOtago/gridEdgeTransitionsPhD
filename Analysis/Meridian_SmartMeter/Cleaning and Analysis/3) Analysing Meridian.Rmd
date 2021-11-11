@@ -846,6 +846,124 @@ myPlot
 
 ```
 
+```{r OERCImpactOnGrid}
+
+#Objective:  Aggregate 25 houses for one day in in Jan/Juy and show the difference after solar installation and the impact on the grid
+
+#Step 1: 
+
+impactDT <- copy(dataDT)
+impactDT <- impactDT[, Island:=NULL]
+impactDT <- impactDT[, Region:=NULL]
+impactDT <- impactDT[, Solar_Install_Date:=NULL]
+impactDT <- impactDT[, Island:=NULL]
+impactDT <- impactDT[, kW:=NULL]
+impactDT <- impactDT[, daysInMonth:=NULL]
+
+#Filter dates: Second Wednesday of February and August
+
+impactDT <- filter(impactDT, date == "2020-02-12"|
+                             date == "2019-02-13"|
+                             date == "2018-02-14"|
+                             date == "2017-02-08"|
+                     
+                             date == "2020-08-12"|
+                             date == "2019-08-14"|
+                             date == "2018-08-08"|
+                             date == "2017-08-09")
+
+#Seperating Summer and Winter and Pre/Post. As we have one year of date for each we can aply the smaple() without having to worry of including multiple years for one iD for the same day
+impactSuPreDT <- subset(impactDT, month %like% "2" & SolarPeriod =="Pre-Solar")
+impactSuPostDT <- subset(impactDT, month %like% "2"  & SolarPeriod =="Post-Solar")
+
+
+impactWiPreDT <- subset(impactDT, month %like% "8"  & SolarPeriod =="Pre-Solar")
+impactWiPostDT <- subset(impactDT, month %like% "8"  & SolarPeriod =="Post-Solar")
+
+
+#Filtering weird houses
+
+impactSuPreDT <- impactSuPreDT[!iD %in% impactSuPreDT[`kWh` <= 0 , iD], ]
+impactSuPostDT <- impactSuPostDT[!iD %in% impactSuPostDT[`kWh` == 0 , iD], ]
+
+impactWiPreDT <- impactWiPreDT[!iD %in% impactWiPreDT[`kWh` <= 0 , iD], ]
+impactWiPostDT <- impactWiPostDT[!iD %in% impactWiPostDT[`kWh` == 0 , iD], ]
+
+
+#Select a random sample of 25 houses
+chosen <- sample(unique(impactSuPreDT$iD), 25)
+impactSuPreDT <- subset(impactSuPreDT, iD %in% chosen) #Check
+
+chosen <- sample(unique(impactSuPostDT$iD), 25)
+impactSuPostDT <- subset(impactSuPostDT, iD %in% chosen) #Check
+
+chosen <- sample(unique(impactWiPreDT$iD), 25)
+impactWiPreDT <- subset(impactWiPreDT, iD %in% chosen) #Check
+
+chosen <- sample(unique(impactWiPostDT$iD), 25)
+impactWiPostDT <- subset(impactWiPostDT, iD %in% chosen) #Check
+
+#Calcuting the sum of kWh for each half hour 
+impactSuPreDT <- impactSuPreDT[, . (HhkWh = sum(kWh, na.rm=TRUE)), keyby =.(obsHalfHour)]
+impactSuPostDT <- impactSuPostDT[, . (HhkWh = sum(kWh, na.rm=TRUE)), keyby =.(obsHalfHour)]
+impactWiPreDT <- impactWiPreDT[, . (HhkWh = sum(kWh, na.rm=TRUE)), keyby =.(obsHalfHour)]
+impactWiPostDT <- impactWiPostDT[, . (HhkWh = sum(kWh, na.rm=TRUE)), keyby =.(obsHalfHour)]
+
+
+colors <- c("Pre-Solar" = "black", "Post-Solar" = "red")
+
+myPlot <- ggplot2::ggplot(impactSuPreDT, aes(x=`obsHalfHour`)) +
+  #facet_wrap(vars(month))+
+  geom_line(aes(y=`HhkWh`, colour = "Pre-Solar"), size =1) +
+  geom_line(data = impactSuPostDT, aes( y= `HhkWh`, colour = "Post-Solar"), size=1)+
+   labs(x="Time of day",y="Energy consumption (kWh)",title="Aggregated net energy consumption (25 random houses) pre/post solar for second Wednesday in Feb (summer) ", color = "iD")+
+  scale_color_manual(values = colors)+
+   #scale_fill_discrete(name = "Household iD")+
+  theme(text = element_text(family = "Cambria"),
+        axis.text.x = element_text(colour = "black"),
+        axis.text.y = element_text(colour = "black"),
+        axis.ticks.x = element_line(colour = "black"),
+        axis.ticks.y = element_line(colour = "black"))
+   #scale_x_continuous(breaks = c(1,2,3,4,5,6,7,8,9,10,11,12))
+
+myPlot
+
+
+
+
+myPlot <- ggplot2::ggplot(impactWiPreDT, aes(x=`obsHalfHour`)) +
+  #facet_wrap(vars(month))+
+  geom_line(aes(y=`HhkWh`, colour = "Pre-Solar"), size =1) +
+  geom_line(data = impactWiPostDT, aes( y= `HhkWh`, colour = "Post-Solar"), size=1)+
+   labs(x="Time of day",y="Energy consumption (kWh)",title="Aggregated net energy consumption (25 random houses) pre/post solar for second Wednesday in August (winter) ", color = "iD")+
+  scale_color_manual(values = colors)+
+   #scale_fill_discrete(name = "Household iD")+
+  theme(text = element_text(family = "Cambria"),
+        axis.text.x = element_text(colour = "black"),
+        axis.text.y = element_text(colour = "black"),
+        axis.ticks.x = element_line(colour = "black"),
+        axis.ticks.y = element_line(colour = "black"))
+   #scale_x_continuous(breaks = c(1,2,3,4,5,6,7,8,9,10,11,12))
+
+myPlot
+
+
+
+
+
+
+
+
+
+
+
+
+```
+
+
+
+
+
 ```{r extractMeridianLink}
 
 #Any data processing has to be made before this code...
