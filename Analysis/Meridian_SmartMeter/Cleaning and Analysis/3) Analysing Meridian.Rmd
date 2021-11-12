@@ -890,33 +890,50 @@ impactWiPreDT <- impactWiPreDT[!iD %in% impactWiPreDT[`kWh` <= 0 , iD], ]
 impactWiPostDT <- impactWiPostDT[!iD %in% impactWiPostDT[`kWh` == 0 , iD], ]
 
 
+
+
 #Select a random sample of 25 houses
-chosen <- sample(unique(impactSuPreDT$iD), 25)
+#So the issue here is that when I only select 25 random houses chances are that they are not all included in post solar data. Solution: select a greater sample thus maximising post houses and then base the sample on post-ids and filter pre. As this is data for one year pre and one year post I do not have to worry about houses that are recorded for the same day in multiple years
+chosen <- sample(unique(impactSuPreDT$iD), 40)
 impactSuPreDT <- subset(impactSuPreDT, iD %in% chosen) #Check
 
-chosen <- sample(unique(impactSuPostDT$iD), 25)
+#chosen <- sample(unique(impactSuPostDT$iD), 25)
 impactSuPostDT <- subset(impactSuPostDT, iD %in% chosen) #Check
 
-chosen <- sample(unique(impactWiPreDT$iD), 25)
+chosen2 <- sample(unique(impactSuPostDT$iD), 25)
+impactSuPreDT <- subset(impactSuPreDT, iD %in% chosen2)
+impactSuPostDT <- subset(impactSuPostDT, iD %in% chosen2)
+
+
+
+
+chosen <- sample(unique(impactWiPreDT$iD), 40)
 impactWiPreDT <- subset(impactWiPreDT, iD %in% chosen) #Check
 
-chosen <- sample(unique(impactWiPostDT$iD), 25)
+#chosen <- sample(unique(impactWiPostDT$iD), 25)
 impactWiPostDT <- subset(impactWiPostDT, iD %in% chosen) #Check
 
+chosen2 <- sample(unique(impactWiPostDT$iD), 25)
+impactWiPreDT <- subset(impactWiPreDT, iD %in% chosen2)
+impactWiPostDT <- subset(impactWiPostDT, iD %in% chosen2)
+
+#Now we have 25 houses for both summer and winter. However, the houses between summer and winter differ
+
+
 #Calcuting the sum of kWh for each half hour 
-impactSuPreDT <- impactSuPreDT[, . (HhkWh = sum(kWh, na.rm=TRUE)), keyby =.(obsHalfHour)]
-impactSuPostDT <- impactSuPostDT[, . (HhkWh = sum(kWh, na.rm=TRUE)), keyby =.(obsHalfHour)]
-impactWiPreDT <- impactWiPreDT[, . (HhkWh = sum(kWh, na.rm=TRUE)), keyby =.(obsHalfHour)]
-impactWiPostDT <- impactWiPostDT[, . (HhkWh = sum(kWh, na.rm=TRUE)), keyby =.(obsHalfHour)]
+impactSuPreDT <- impactSuPreDT[, . (HhkW = sum(kWh, na.rm=TRUE)*2), keyby =.(obsHalfHour)]
+impactSuPostDT <- impactSuPostDT[, . (HhkW = sum(kWh, na.rm=TRUE)*2), keyby =.(obsHalfHour)]
+impactWiPreDT <- impactWiPreDT[, . (HhkW = sum(kWh, na.rm=TRUE)*2), keyby =.(obsHalfHour)]
+impactWiPostDT <- impactWiPostDT[, . (HhkW = sum(kWh, na.rm=TRUE)*2), keyby =.(obsHalfHour)]
 
 
 colors <- c("Pre-Solar" = "black", "Post-Solar" = "red")
 
 myPlot <- ggplot2::ggplot(impactSuPreDT, aes(x=`obsHalfHour`)) +
   #facet_wrap(vars(month))+
-  geom_line(aes(y=`HhkWh`, colour = "Pre-Solar"), size =1) +
-  geom_line(data = impactSuPostDT, aes( y= `HhkWh`, colour = "Post-Solar"), size=1)+
-   labs(x="Time of day",y="Energy consumption (kWh)",title="Aggregated net energy consumption (25 random houses) pre/post solar for second Wednesday in Feb (summer) ", color = "iD")+
+  geom_line(aes(y=`HhkW`, colour = "Pre-Solar"), size =1) +
+  geom_line(data = impactSuPostDT, aes( y= `HhkW`, colour = "Post-Solar"), size=1)+
+   labs(x="Time of day",y="Power  (kW)",title="Aggregated net power consumption (25 random houses) pre/post solar for second Wednesday in Feb (summer) ", color = "iD")+
   scale_color_manual(values = colors)+
    #scale_fill_discrete(name = "Household iD")+
   theme(text = element_text(family = "Cambria"),
@@ -933,9 +950,9 @@ myPlot
 
 myPlot <- ggplot2::ggplot(impactWiPreDT, aes(x=`obsHalfHour`)) +
   #facet_wrap(vars(month))+
-  geom_line(aes(y=`HhkWh`, colour = "Pre-Solar"), size =1) +
-  geom_line(data = impactWiPostDT, aes( y= `HhkWh`, colour = "Post-Solar"), size=1)+
-   labs(x="Time of day",y="Energy consumption (kWh)",title="Aggregated net energy consumption (25 random houses) pre/post solar for second Wednesday in August (winter) ", color = "iD")+
+  geom_line(aes(y=`HhkW`, colour = "Pre-Solar"), size =1) +
+  geom_line(data = impactWiPostDT, aes( y= `HhkW`, colour = "Post-Solar"), size=1)+
+   labs(x="Time of day",y="Power (kW)",title="Aggregated net power consumption (25 random houses) pre/post solar for second Wednesday in August (winter) ", color = "iD")+
   scale_color_manual(values = colors)+
    #scale_fill_discrete(name = "Household iD")+
   theme(text = element_text(family = "Cambria"),
